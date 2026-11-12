@@ -37,15 +37,13 @@ if not exist "apps\api\prisma\dev.db" (
   rem atualiza a estrutura do banco (e o cliente Prisma) sem apagar dados
   pushd apps\api
   call npx prisma db push --skip-generate
-  set DBERR=%errorlevel%
-  popd
-  if not "%DBERR%"=="0" (
+  if errorlevel 1 (
+    popd
     echo.
     echo  O banco existente nao aceitou a atualizacao da estrutura. Seus dados nao foram alterados.
     echo  Para recriar o banco de demonstracao, apague apps\api\prisma\dev.db e rode de novo.
     goto erro
   )
-  pushd apps\api
   call npx prisma generate >nul
   popd
 )
