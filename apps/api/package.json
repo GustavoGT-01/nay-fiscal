@@ -1,0 +1,39 @@
+{
+  "name": "@nay/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/server.ts",
+    "start": "tsx src/server.ts",
+    "build": "tsc --noEmit -p .",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run",
+    "db:setup": "prisma db push && tsx prisma/seed.ts",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:clear": "tsx prisma/clear.ts",
+    "senha": "tsx prisma/senha.ts",
+    "exemplos:nfse": "tsx prisma/exemplos-nfse.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.2",
+    "@fastify/jwt": "^9.0.4",
+    "@fastify/multipart": "^9.0.3",
+    "@nay/shared": "*",
+    "@prisma/client": "^6.3.1",
+    "bcryptjs": "^2.4.3",
+    "exceljs": "^4.4.0",
+    "fast-xml-parser": "^4.5.1",
+    "fastify": "^5.2.1",
+    "yauzl": "^3.2.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.13.0",
+    "@types/yauzl": "^2.10.3",
+    "prisma": "^6.3.1",
+    "tsx": "^4.19.2",
+    "vitest": "^3.0.5"
+  }
+}

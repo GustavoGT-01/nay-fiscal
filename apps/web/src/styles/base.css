@@ -1,0 +1,50 @@
+/* Estilos portados de design/nay-fiscal-mockup.html (fonte da verdade do visual). */
+/* ---------- Tokens: paleta "Pomar" ---------- */
+:root{
+  --jabuticaba:#2A1846;   /* tinta da marca, menu */
+  --uva:#7B5CFF;          /* interação */
+  --uva-soft:#EDE8FF;
+  --caju:#FF5B3A;         /* erro */
+  --caju-soft:#FFE9E3;
+  --maracuja:#E9A400;     /* atenção */
+  --maracuja-soft:#FFF4D6;
+  --limao:#14B07F;        /* conforme */
+  --limao-soft:#DDF6EC;
+  --bg:#F3F1F8;
+  --surface:#FFFFFF;
+  --surface-2:#F8F7FC;
+  --line:#E4E0EF;
+  --text:#1D1430;
+  --muted:#6C6385;
+  --bar-ok:#2A1846;
+  --shadow:0 1px 0 rgba(42,24,70,.04),0 12px 32px -18px rgba(42,24,70,.35);
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Onest",ui-sans-serif,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --spring:cubic-bezier(.34,1.4,.64,1);
+}
+[data-theme="dark"]{
+  --uva:#9C85FF;
+  --uva-soft:#2C2150;
+  --caju:#FF7A5C;
+  --caju-soft:#3A1D1F;
+  --maracuja:#FFC23D;
+  --maracuja-soft:#352A12;
+  --limao:#3DD9A4;
+  --limao-soft:#123129;
+  --bg:#120B20;
+  --surface:#1B1230;
+  --surface-2:#22183A;
+  --line:#33284D;
+  --text:#F1ECFC;
+  --muted:#A69CC2;
+  --bar-ok:#CFC3F5;
+  --shadow:0 1px 0 rgba(0,0,0,.2),0 16px 40px -20px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--body);font-size:14.5px;line-height:1.5;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--uva);outline-offset:2px;border-radius:8px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}

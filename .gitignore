@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.env
+*.db
+*.db-journal
+apps/api/storage/
+# XMLs reais de clientes ficam fora do git; fixtures sinteticas ficam em fixtures/xml
+/*.xml
+/*.zip
+.DS_Store
+.claude/worktrees/
+graphify-out/
+*.log
+# saidas geradas pelos testes ponta a ponta
+doc/testes/auditoria.csv
+doc/testes/auditoria.xlsx
+doc/testes/nfe-60056.html
+doc/testes/nfe-60056.pdf
+doc/testes/resultados.json
+apps/api/prisma/test-*.db*

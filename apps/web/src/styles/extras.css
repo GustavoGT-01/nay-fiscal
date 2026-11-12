@@ -1,0 +1,88 @@
+/* Complementos ao visual do mockup: login, carregamento, itens da nota. */
+a.nav-btn{color:inherit;text-decoration:none}
+.login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);background:var(--bg)}
+.login-art{background:var(--jabuticaba);color:#EDE6FB;padding:48px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.login-art h1{color:#fff;font-size:clamp(34px,4vw,52px);max-width:12ch}
+.login-art p{color:#C7BBE6;max-width:40ch;line-height:1.6}
+.login-art .bars{display:flex;align-items:flex-end;gap:2px;height:90px;margin-top:30px;opacity:.9}
+.login-art .bars span{flex:1;background:#CFC3F5;border-radius:1px}
+.login-art .bars span.e{background:var(--caju)}
+.login-form{display:grid;place-items:center;padding:32px}
+.login-card{width:min(400px,100%)}
+.login-card h2{font-size:28px;margin-bottom:6px}
+.login-card .tf{margin-top:6px}
+.login-card label{display:block;font-size:13px;color:var(--muted);margin-top:16px}
+.login-card .btn{width:100%;justify-content:center;box-sizing:border-box;margin-top:22px}
+.err-msg{color:var(--caju);font-size:13px;margin-top:10px}
+.demo-hint{margin-top:22px;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line);font-size:12.5px;color:var(--muted);line-height:1.6}
+.demo-hint code{font-family:var(--mono);color:var(--text)}
+@media (max-width:820px){.login{grid-template-columns:1fr}.login-art{display:none}}
+
+.skel{background:linear-gradient(90deg,var(--surface-2),var(--line),var(--surface-2));background-size:200% 100%;animation:skel 1.2s linear infinite;border-radius:12px}
+@keyframes skel{to{background-position:-200% 0}}
+.center-load{display:grid;place-items:center;min-height:50vh;color:var(--muted)}
+
+.items{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.items th{color:var(--muted);font-weight:500;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+.items td{padding:7px 8px;border-bottom:1px solid var(--line)}
+.items td.r,.items th.r{text-align:right}
+.section-t{font:600 12.5px var(--body);color:var(--muted);margin:18px 0 6px;text-transform:none}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kv div{padding:10px 12px;border-radius:14px;background:var(--surface-2)}
+.kv small{display:block;color:var(--muted);font-size:11.5px}
+.kv b{font:700 15px var(--display)}
+.chip-key{font:500 11.5px var(--mono);color:var(--muted);word-break:break-all}
+.xml .ln{display:block}
+.err-box{padding:16px;border-radius:16px;background:var(--caju-soft);color:var(--caju)}
+
+/* ---------- Confirmacao de acao destrutiva + Gestao ---------- */
+.btn.danger{background:var(--caju);border-color:var(--caju);color:#fff;box-shadow:0 8px 20px -10px var(--caju)}
+.btn.danger-ghost{color:var(--caju);border-color:color-mix(in srgb,var(--caju) 40%,var(--line))}
+.btn.danger-ghost:hover{background:var(--caju-soft)}
+.cmdk.confirm{top:20vh;width:min(460px,calc(100vw - 24px))}
+.confirm form{padding:22px}
+.confirm-b{display:flex;gap:14px;align-items:flex-start}
+.confirm-b h2{font-size:20px;margin:0 0 6px}
+.confirm-ico{flex:none;width:40px;height:40px;border-radius:12px;background:var(--caju-soft);color:var(--caju);display:grid;place-items:center;font-size:20px}
+.confirm-type{display:grid;gap:8px;margin-top:18px;font-size:13px;color:var(--muted)}
+.confirm-type .input{min-width:0}
+.confirm-type b{color:var(--text)}
+.confirm-f{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;flex-wrap:wrap}
+.gestao-sec{margin-top:30px}
+.gestao-sec>h2{font-size:22px;margin:0 0 4px}
+.gestao-sec>.hint{margin:0 0 14px}
+.table.static tbody tr{cursor:default}
+.table.static tbody tr:hover{background:transparent}
+.danger-zone{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-color:color-mix(in srgb,var(--caju) 45%,var(--line));background:color-mix(in srgb,var(--caju-soft) 45%,var(--surface))}
+.danger-zone h3{margin:0 0 4px;font-size:16px}
+.danger-zone p{margin:0}
+/* fila de importacao: nome longo nao empurra o contador */
+.job-top span:first-child{min-width:0;word-break:break-all}
+.job-top .hint{white-space:nowrap;flex:none}
+/* .me tambem e o avatar do topo: restaura a bolha do chat */
+.msg.me{width:auto;height:auto;display:block;place-items:initial;font-size:inherit;font-weight:400;border-radius:18px 18px 6px 18px;background:var(--uva)}
+/* codigo de barras com muitas notas: barras encolhem em vez de vazar do painel */
+.barcode{overflow:hidden}
+.bar{min-width:0}
+@media (max-width:820px){.barcode{gap:.5px}}
+/* cadastro de cliente */
+.client-form{top:8vh;width:min(560px,calc(100vw - 24px));max-height:84vh;overflow:auto}
+.client-form form{padding:22px}
+.client-form h2{font-size:22px;margin:0}
+.cf-l{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
+.cf-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.cf-grid2{display:grid;grid-template-columns:70px 1fr;gap:0 8px}
+.ok-msg{color:#0B7F5A;font-size:13px;margin-top:10px}
+[data-theme=dark] .ok-msg{color:var(--limao)}
+.ccard-acts{display:flex;gap:6px;margin-top:12px}
+.ccard-acts .btn{padding:5px 10px;font-size:12.5px}
+@media (max-width:820px){.cf-grid{grid-template-columns:1fr}}
+/* .cmdk input{all:unset} da busca apaga o estilo dos campos: restaura no formulario de cliente */
+.cmdk.client-form .tf{width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font:inherit;color:inherit}
+.cmdk.client-form .tf:focus-visible{outline:2px solid var(--uva);outline-offset:1px}
+.cmdk.client-form .tf:disabled{opacity:.65}
+
+/* NFS-e: cartoes de totais */
+.nfse-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+.nfse-kpis b{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+@media (max-width:820px){.nfse-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}

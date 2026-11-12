@@ -1,0 +1,27 @@
+/* ---------- Responsive ---------- */
+.burger{display:none}
+@media (max-width:1080px){
+  .home-grid,.two,.sim{grid-template-columns:1fr}
+  .steps{flex-direction:row;overflow:auto}
+  .step span.l{display:none}
+}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;left:0;top:0;bottom:0;width:250px;z-index:45;transform:translateX(-100%);transition:transform .4s var(--spring)}
+  .side.open{transform:none}
+  .burger{display:grid}
+  .main{padding:14px 16px 60px}
+  .search span,.search kbd{display:none}
+  .search{flex:0 0 40px;height:40px;padding:0;justify-content:center;border-radius:13px}
+  #bellBtn{display:none}
+  .leg{min-width:calc(50% - 5px)}
+  .leg strong{font-size:22px}
+  .client small{display:none}
+  .duel,.form-grid{grid-template-columns:1fr}
+  .bal-row{grid-template-columns:110px minmax(0,1fr) 80px}
+  .rule-h{grid-template-columns:minmax(0,1fr) auto auto}
+  .rule-h .tag{grid-column:1/-1;justify-self:start}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}
+}

@@ -1,0 +1,29 @@
+/* ---------- Auditoria ---------- */
+.rule{border:1px solid var(--line);border-radius:20px;background:var(--surface);margin-bottom:10px;overflow:hidden;position:relative;transition:border-color .2s}
+.rule::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--line)}
+.rule.erro::before{background:var(--caju)}
+.rule.atencao::before{background:var(--maracuja)}
+.rule-h{all:unset;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:16px 20px 16px 24px;width:100%;box-sizing:border-box;cursor:pointer}
+.rule-h .count{font:800 22px var(--display);text-align:right;line-height:1}
+.rule-h .count small{display:block;font:500 12px var(--body);color:var(--muted)}
+.rule-h .chev{transition:transform .3s var(--spring);color:var(--muted);font-size:20px}
+.rule.open .chev{transform:rotate(180deg)}
+.rule-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s var(--ease)}
+.rule.open .rule-b{grid-template-rows:1fr}
+.rule-b>div{overflow:hidden}
+.rule-in{padding:0 20px 18px 24px}
+.rule-in p{margin:0 0 12px;color:var(--muted);max-width:75ch}
+.code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.code .add{color:var(--limao)}
+.minirows{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.chip-note{all:unset;font:500 12px var(--mono);padding:4px 10px;border-radius:99px;border:1px solid var(--line);cursor:pointer}
+.chip-note:hover{border-color:var(--uva);color:var(--uva)}
+.runbar{height:4px;border-radius:4px;background:var(--line);overflow:hidden;margin:0 0 14px;opacity:0;transition:opacity .2s}
+.runbar.on{opacity:1}
+.runbar div{height:100%;width:0;background:var(--uva)}
+.groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.gcard{all:unset;padding:16px;border-radius:18px;border:1px solid var(--line);background:var(--surface);cursor:pointer;transition:transform .25s var(--spring),border-color .2s}
+.gcard:hover{transform:translateY(-2px);border-color:var(--uva)}
+.gcard .meter{display:flex;height:8px;border-radius:8px;overflow:hidden;margin:12px 0 8px;background:var(--surface-2)}
+.gcard .meter i{display:block}
+.gcard small{color:var(--muted);font-size:12.5px}

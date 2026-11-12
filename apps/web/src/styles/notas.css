@@ -1,0 +1,12 @@
+/* ---------- Notas ---------- */
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:22px 0 14px}
+.input{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);min-width:260px}
+.input input{all:unset;flex:1}
+.table{width:100%;border-collapse:separate;border-spacing:0}
+.table th{font-weight:500;font-size:12.5px;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--line)}
+.table td{padding:12px 14px;border-bottom:1px solid var(--line);font-size:13.5px}
+.table tbody tr{cursor:pointer;transition:background .15s}
+.table tbody tr:hover,.table tbody tr:focus-visible{background:var(--surface-2);outline:none}
+.table td.r,.table th.r{text-align:right}
+.table-wrap{overflow:auto;border-radius:22px;border:1px solid var(--line);background:var(--surface)}
+.pager{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;color:var(--muted);font-size:13px}

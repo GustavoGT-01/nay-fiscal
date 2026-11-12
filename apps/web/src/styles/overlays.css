@@ -1,0 +1,19 @@
+/* ---------- Palette & toast ---------- */
+.cmdk{position:fixed;left:50%;top:14vh;transform:translateX(-50%) scale(.97);width:min(560px,calc(100vw - 24px));background:var(--surface);border-radius:22px;border:1px solid var(--line);box-shadow:0 30px 80px -30px rgba(20,10,36,.6);z-index:51;opacity:0;pointer-events:none;transition:opacity .2s,transform .3s var(--spring)}
+.cmdk.on{opacity:1;pointer-events:auto;transform:translateX(-50%) scale(1)}
+.cmdk .in{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line);font-size:16px}
+.cmdk input{all:unset;flex:1}
+.cmdk ul{list-style:none;margin:0;padding:8px;max-height:340px;overflow:auto}
+.cmdk li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;cursor:pointer;font-size:14px}
+.cmdk li small{margin-left:auto;color:var(--muted)}
+.cmdk li.sel{background:var(--uva-soft)}
+.cmdk li i{font-size:18px;color:var(--muted)}
+.scrim2{position:fixed;inset:0;background:rgba(20,10,36,.35);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim2.on{opacity:1;pointer-events:auto}
+.toasts{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:60;align-items:center}
+.toast{display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:14px;background:var(--jabuticaba);color:#fff;font-size:13.5px;box-shadow:0 14px 40px -14px rgba(20,10,36,.7);animation:toastIn .45s var(--spring)}
+[data-theme="dark"] .toast{background:#F1ECFC;color:#2A1846}
+.toast i{color:var(--limao);font-size:18px}
+.toast.out{animation:toastOut .3s var(--ease) forwards}
+@keyframes toastIn{from{opacity:0;transform:translateY(16px) scale(.95)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(10px)}}
