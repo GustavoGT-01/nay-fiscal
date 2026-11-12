@@ -229,7 +229,7 @@ export interface SupplierGroupDTO {
 export interface DashboardDTO {
   client: { id: string; name: string } | null;
   totals: { audited: number; ok: number; erro: number; atencao: number; cancelada: number };
-  barcode: { id: string; number: string; status: NoteStatus; total: number; counterpart: string; topFinding: string | null; weight: number }[];
+  barcode: { id: string; number: string; status: NoteStatus; issuedAt: string; total: number; counterpart: string; topFinding: string | null; weight: number }[];
   topErrors: { code: string; title: string; items: number }[];
   lastAuditAt: string | null;
   verdicts: {

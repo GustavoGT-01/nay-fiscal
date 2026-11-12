@@ -23,6 +23,13 @@
   --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
   --ease:cubic-bezier(.2,.8,.2,1);
   --spring:cubic-bezier(.34,1.4,.64,1);
+  /* movimento (mesmas curvas e tempos do mockup de login) */
+  --ease-out:cubic-bezier(.2,.8,.2,1);
+  --dur-fast:.15s;
+  --dur-base:.25s;
+  --dur-slow:.45s;
+  --dur-enter:.7s;
+  --stagger:45ms;
 }
 [data-theme="dark"]{
   --uva:#9C85FF;

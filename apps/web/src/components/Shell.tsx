@@ -95,6 +95,15 @@ export function Shell() {
         </header>
         <Outlet />
       </main>
+      <nav className="tabbar" aria-label="Navegação">
+        {screens.filter((x) => ['inicio', 'notas', 'importar', 'auditoria'].includes(x.key)).map((x) => (
+          <NavLink key={x.key} to={x.path} end={x.path === '/'} className="tab">
+            <i className={'ti ti-' + x.icon} />{x.label}
+            {x.key === 'auditoria' && errCount > 0 && <span className="pill">{errCount}</span>}
+          </NavLink>
+        ))}
+        <button type="button" className="tab" onClick={(e) => { e.stopPropagation(); setSideOpen(true); }}><i className="ti ti-menu-2" />Mais</button>
+      </nav>
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
     </div>
   );

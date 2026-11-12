@@ -1,5 +1,6 @@
 /* ---------- Responsive ---------- */
 .burger{display:none}
+.tabbar{display:none}
 @media (max-width:1080px){
   .home-grid,.two,.sim{grid-template-columns:1fr}
   .steps{flex-direction:row;overflow:auto}
@@ -10,7 +11,13 @@
   .side{position:fixed;left:0;top:0;bottom:0;width:250px;z-index:45;transform:translateX(-100%);transition:transform .4s var(--spring)}
   .side.open{transform:none}
   .burger{display:grid}
-  .main{padding:14px 16px 60px}
+  .main{padding:14px 16px 84px}
+  .tabbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:40;padding:8px 8px calc(10px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+  .tab{all:unset;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:52px;border-radius:12px;color:var(--muted);font-size:10.5px;font-weight:600;cursor:pointer;transition:background var(--dur-base),color var(--dur-base)}
+  .tab i{font-size:20px}
+  .tab.active{color:var(--text);background:var(--uva-soft)}
+  .tab:focus-visible{outline:2px solid var(--uva);outline-offset:2px}
+  .tab .pill{position:absolute;top:2px;right:8px;font-size:9.5px;padding:1px 6px;border-radius:99px;background:var(--caju);color:#fff}
   .search span,.search kbd{display:none}
   .search{flex:0 0 40px;height:40px;padding:0;justify-content:center;border-radius:13px}
   #bellBtn{display:none}
@@ -23,5 +30,5 @@
   .rule-h .tag{grid-column:1/-1;justify-self:start}
 }
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
