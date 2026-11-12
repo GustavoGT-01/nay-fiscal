@@ -16,6 +16,7 @@ import './styles/clientes-ia.css';
 import './styles/overlays.css';
 import './styles/responsive.css';
 import './styles/extras.css';
+import './styles/login.css';
 import { SessionProvider, useSession } from './lib/session';
 import { EmptyState, ToastProvider } from './lib/ui';
 import { NoteDrawerProvider } from './components/note-drawer';
