@@ -50,19 +50,28 @@ Os XMLs de prefeituras que ainda usam leiaute próprio (ABRASF, Ginfes e outros)
 
 ## Acesso pela internet (túnel Cloudflare)
 
-Dê dois cliques em `tunnel.bat`. Ele sobe o sistema (se ainda não estiver rodando), cria um segredo de sessão próprio em `apps\api\.env` e abre um túnel rápido da Cloudflare. O endereço `https://...trycloudflare.com` aparece na janela e muda a cada vez.
-
-Antes de passar o link para alguém, troque as senhas de demonstração:
+Antes do primeiro túnel, troque as senhas de demonstração (o `tunnel.bat` se recusa a abrir enquanto alguma conta usar `nay12345`). A senha nova precisa ter 10 ou mais caracteres, com letras e números:
 
 ```bash
-npm run senha -- admin@nayfiscal.dev SuaSenhaForte123
+npm run senha -- admin@nayfiscal.dev <nova-senha>
 ```
 
 ```bash
-npm run senha -- analista@nayfiscal.dev OutraSenhaForte456
+npm run senha -- analista@nayfiscal.dev <outra-senha>
 ```
 
-Pelo túnel, a tela de login não mostra as senhas de demonstração. O túnel rápido não tem garantia de disponibilidade; para endereço fixo, use um túnel nomeado da Cloudflare (precisa de conta e `cloudflared tunnel login`).
+Depois dê dois cliques em `tunnel.bat`. Ele garante um segredo de sessão próprio em `apps\api\.env`, confere as senhas, compila o front e sobe a API na porta 3334 servindo o front já compilado (o servidor de desenvolvimento do Vite nunca fica exposto). Em seguida abre um túnel rápido da Cloudflare. O endereço `https://...trycloudflare.com` aparece na janela e muda a cada vez.
+
+O túnel rápido não tem garantia de disponibilidade; para endereço fixo, use um túnel nomeado da Cloudflare (precisa de conta e `cloudflared tunnel login`).
+
+## Segurança
+
+- Sessão: o token de acesso (15 min) fica só na memória da aba; o de renovação (7 dias) fica num cookie `httpOnly`, `SameSite=Strict`, restrito a `/api/auth`. Trocar a senha (`npm run senha`) derruba todas as sessões abertas; `POST /api/auth/logout-all` faz o mesmo para o próprio usuário.
+- Segredo: a API ignora `JWT_SECRET` vazio, curto (menos de 32 caracteres) ou público e usa um segredo aleatório temporário. `iniciar.bat` e `tunnel.bat` geram um segredo forte com `scripts/garantir-segredo.ps1`.
+- Login: 5 senhas erradas seguidas bloqueiam a conta por 15 minutos, e cada IP tem 10 tentativas por minuto.
+- Importação: até 20 arquivos e 100 MB por envio; XML até 5 MB, sem `DOCTYPE`/`ENTITY`; ZIP com no máximo 3.000 XMLs, 300 MB descompactados e taxa de compressão até 200:1 (bloqueia zip bomb).
+- Saídas: o CSV neutraliza fórmulas vindas do XML (`=`, `+`, `-`, `@`), e o HTML da nota bloqueia scripts por CSP.
+- Testes de ataque em `apps/api/test/security.test.ts` (`npm test`).
 
 ## Estrutura
 

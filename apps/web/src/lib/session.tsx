@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ClientDTO, UserDTO } from '@nay/shared';
-import { api, ApiError, onUnauthorized, tokens } from './api';
+import { api, ApiError, onUnauthorized, refreshSession, tokens } from './api';
 
 interface Session {
   user: UserDTO | null;
@@ -22,6 +22,16 @@ const CLIENT_KEY = 'nay.client';
 export function SessionProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const [hasToken, setHasToken] = useState(!!tokens.get());
+  // ao abrir a pagina, a sessao volta pelo cookie httpOnly (o token de acesso so vive na memoria)
+  const [booting, setBooting] = useState(!tokens.get());
+  useEffect(() => {
+    if (!booting) return;
+    refreshSession<{ accessToken: string; user: UserDTO }>()
+      .then((r) => {
+        if (r) { qc.setQueryData(['me'], r.user); setHasToken(true); }
+      })
+      .finally(() => setBooting(false));
+  }, []);
   const [clientId, setClientIdState] = useState<string | null>(() => {
     try { return localStorage.getItem(CLIENT_KEY); } catch { return null; }
   });
@@ -37,6 +47,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const clients = useQuery({ queryKey: ['clients'], queryFn: () => api<ClientDTO[]>('/api/clients'), enabled: !!me.data });
 
   const logout = useCallback(() => {
+    // apaga o cookie de sessao no servidor; a tela sai mesmo se a rede falhar
+    void fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
     tokens.set(null);
     setHasToken(false);
     qc.clear();
@@ -45,10 +57,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => { onUnauthorized.cb = logout; }, [logout]);
 
   const login = async (email: string, password: string) => {
-    const r = await api<{ accessToken: string; refreshToken: string; user: UserDTO }>('/api/auth/login', {
+    const r = await api<{ accessToken: string; user: UserDTO }>('/api/auth/login', {
       method: 'POST', body: JSON.stringify({ email, password }),
     });
-    tokens.set({ accessToken: r.accessToken, refreshToken: r.refreshToken });
+    tokens.set(r.accessToken);
     qc.setQueryData(['me'], r.user);
     setHasToken(true);
   };
@@ -65,7 +77,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider
       value={{
         user,
-        loading: hasToken && (me.isPending || (!!me.data && clients.isLoading)),
+        loading: booting || (hasToken && (me.isPending || (!!me.data && clients.isLoading))),
         login,
         logout,
         clients: list,

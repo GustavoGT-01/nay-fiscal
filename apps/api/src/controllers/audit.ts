@@ -74,7 +74,7 @@ export async function exportReport(req: FastifyRequest, reply: FastifyReply) {
   const rules = await ruleMap();
   const list = await findings.listForExport({ severity: { not: 'ok' }, document: { clientId: client.id, ...periodWhere(q), ...directionWhere(q.direction) } });
   const rows = exportRows(list, rules);
-  const base = `auditoria-${client.cnpj}`;
+  const base = `auditoria-${client.cnpj.replace(/\D/g, '')}`;
   if (q.format === 'csv') {
     return reply.header('Content-Type', 'text/csv; charset=utf-8').header('Content-Disposition', `attachment; filename="${base}.csv"`).send(toCsv(rows));
   }

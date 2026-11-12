@@ -10,9 +10,21 @@ export function serviceSummary(json: string | null): NoteRowDTO['service'] {
   return { code: n.serviceCode, description: n.description, issRate: n.issRate, issValue: n.issValue, retained: n.issRetention === '2' || n.issRetention === '3', competence: n.competence };
 }
 
-export function periodWhere(q: { from?: string; to?: string }) {
-  if (!q.from && !q.to) return {};
-  return { issuedAt: { gte: q.from ? new Date(q.from + 'T00:00:00-03:00') : undefined, lte: q.to ? new Date(q.to + 'T23:59:59-03:00') : undefined } };
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Data AAAA-MM-DD do filtro; qualquer outra coisa e erro 400 (antes virava 500 no banco). */
+function day(v: unknown, time: string) {
+  if (v === undefined || v === null || v === '') return undefined;
+  const d = typeof v === 'string' && ISO_DAY.test(v) ? new Date(`${v}T${time}-03:00`) : null;
+  if (!d || Number.isNaN(d.getTime())) throw Object.assign(new Error('Data inválida. Use AAAA-MM-DD.'), { statusCode: 400 });
+  return d;
+}
+
+export function periodWhere(q: { from?: unknown; to?: unknown }) {
+  const gte = day(q.from, '00:00:00');
+  const lte = day(q.to, '23:59:59');
+  if (!gte && !lte) return {};
+  return { issuedAt: { gte, lte } };
 }
 
 /** Filtro de direcao: entrada | saida | all (padrao). */

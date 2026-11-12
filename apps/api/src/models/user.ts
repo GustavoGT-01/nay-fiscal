@@ -10,3 +10,6 @@ export const findWithOfficeAndProfile = (id: string) =>
 
 export const listByOffice = (officeId: string) =>
   prisma.user.findMany({ where: { officeId }, include: { profile: true }, orderBy: { name: 'asc' } });
+/** Invalida todos os tokens ja emitidos para o usuario (troca de senha, "sair de todos"). */
+export const bumpTokenVersion = (id: string) =>
+  prisma.user.update({ where: { id }, data: { tokenVersion: { increment: 1 } } });

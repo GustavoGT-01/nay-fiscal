@@ -20,7 +20,10 @@ export const listForRuleGroups = (where: Prisma.FindingWhereInput) =>
   });
 
 export const listForExport = (where: Prisma.FindingWhereInput) =>
-  prisma.finding.findMany({ where, include: { document: true, item: true }, orderBy: [{ document: { issuedAt: 'desc' } }] });
+  // sem a coluna xml (pesada) e com teto de linhas: exportar nao pode derrubar a API
+  prisma.finding.findMany({ where, include: { document: { omit: { xml: true } }, item: true }, orderBy: [{ document: { issuedAt: 'desc' } }], take: EXPORT_MAX_ROWS });
+
+export const EXPORT_MAX_ROWS = 50_000;
 
 type NewFinding = {
   documentId: string; itemId: string | null; ruleCode: string; field: string; kind: string;

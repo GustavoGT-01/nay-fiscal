@@ -14,7 +14,9 @@
     "db:setup": "npm run db:setup -w @nay/api",
     "db:clear": "npm run db:clear -w @nay/api",
     "senha": "npm run senha -w @nay/api --",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "checar-senhas": "npm run checar-senhas -w @nay/api",
+    "start:web": "npm run build -w @nay/web && npm run start:web -w @nay/api"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
@@ -26,5 +28,9 @@
     "@prisma/engines@6.19.3": true,
     "esbuild@0.28.2": true,
     "esbuild@0.25.12": true
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0",
+    "uuid": "^11.1.1"
   }
 }

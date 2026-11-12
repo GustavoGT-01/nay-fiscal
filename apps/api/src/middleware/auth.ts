@@ -8,6 +8,8 @@ export interface TokenPayload {
   officeId: string;
   role: string;
   typ: 'access' | 'refresh';
+  /** versao do token do usuario no momento da emissao (revogacao) */
+  ver: number;
 }
 
 declare module '@fastify/jwt' {
@@ -27,8 +29,8 @@ declare module 'fastify' {
 export async function authenticate(req: FastifyRequest, reply: FastifyReply) {
   try {
     await req.jwtVerify();
-    if (req.user.typ !== 'access') throw new Error();
-    req.me = await loadUser(req.user.sub);
+    if (req.user.typ !== 'access' || typeof req.user.ver !== 'number') throw new Error();
+    req.me = await loadUser(req.user.sub, req.user.ver);
   } catch {
     return reply.code(401).send({ message: 'Sua sessão expirou. Entre de novo.' });
   }
@@ -40,7 +42,11 @@ export const can = (perm: string) => async (req: FastifyRequest, reply: FastifyR
 };
 
 /** Garante que o cliente pertence ao escritorio do usuario. */
-export async function ownClient(req: FastifyRequest, clientId: string | undefined) {
+export async function ownClient(req: FastifyRequest, clientId: unknown) {
+  // ?clientId=a&clientId=b vira array: recusa (antes chegava ao Prisma e dava 500)
+  if (clientId !== undefined && (typeof clientId !== 'string' || clientId.length > 100)) {
+    throw Object.assign(new Error('Cliente inválido.'), { statusCode: 400 });
+  }
   if (!clientId) throw Object.assign(new Error('Escolha um cliente.'), { statusCode: 400 });
   const c = await clients.findOfOffice(clientId, req.me.officeId);
   if (!c) throw Object.assign(new Error('Cliente não encontrado.'), { statusCode: 404 });
