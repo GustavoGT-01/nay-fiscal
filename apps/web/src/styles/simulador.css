@@ -34,7 +34,9 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 [data-theme="dark"] .verdict{background:#2E1E52}
 .verdict b{color:#fff}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
-.tf{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.tf{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);outline:none;transition:border-color var(--dur-base),box-shadow var(--dur-base),background var(--dur-base)}
+.tf:hover{border-color:var(--muted)}
+.tf:focus{border-color:var(--uva);box-shadow:0 0 0 4px color-mix(in srgb,var(--uva) 20%,transparent)}
 .laudo{border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:16px;background:var(--surface-2)}
 .laudo dl{display:grid;grid-template-columns:auto 1fr;gap:8px 20px;margin:12px 0 0}
 .laudo dt{color:var(--muted)}
