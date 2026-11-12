@@ -66,13 +66,19 @@ export const findOwnerByKey = (key: string, officeId: string) =>
 
 export const markCancelled = (id: string) => prisma.document.update({ where: { id }, data: { cancelled: true } });
 
-export const create = (data: Prisma.DocumentUncheckedCreateInput) => prisma.document.create({ data });
-
-/** Atualiza a nota e apaga os itens antigos (os novos entram com `createItems`). */
-export const updateReplacingItems = (id: string, data: Prisma.DocumentUncheckedUpdateInput) =>
-  prisma.document.update({ where: { id }, data: { ...data, items: { deleteMany: {} } } });
-
-export const createItems = (data: Prisma.DocumentItemUncheckedCreateInput[]) => prisma.documentItem.createMany({ data });
+/** Grava a nota e os itens numa unica transacao: ou entra tudo, ou nada. */
+export const saveWithItems = (
+  existingId: string | null,
+  data: Prisma.DocumentUncheckedCreateInput,
+  items: Omit<Prisma.DocumentItemUncheckedCreateInput, 'documentId'>[],
+) =>
+  prisma.$transaction(async (tx) => {
+    const doc = existingId
+      ? await tx.document.update({ where: { id: existingId }, data: { ...data, items: { deleteMany: {} } } })
+      : await tx.document.create({ data });
+    await tx.documentItem.createMany({ data: items.map((i) => ({ ...i, documentId: doc.id })) });
+    return doc;
+  });
 
 export const idsForAudit = (clientId: string, from?: Date, to?: Date) =>
   prisma.document.findMany({ where: { clientId, issuedAt: { gte: from, lte: to } }, select: { id: true } });

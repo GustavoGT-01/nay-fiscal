@@ -77,11 +77,17 @@ export async function ingestXml(clientId: string, xml: string, uploadId?: string
     xml,
   };
 
-  const existing = await documents.findByKey(clientId, parsed.key);
-  const doc = existing
-    ? await documents.updateReplacingItems(existing.id, data)
-    : await documents.create(data);
-  await documents.createItems(parsed.items.map((i) => ({ ...i, documentId: doc.id })));
+  let existing = await documents.findByKey(clientId, parsed.key);
+  let doc;
+  try {
+    doc = await documents.saveWithItems(existing?.id ?? null, data, parsed.items);
+  } catch (err) {
+    // importacao concorrente da mesma chave: a outra gravou primeiro, entao atualiza
+    if ((err as { code?: string }).code !== 'P2002') throw err;
+    existing = await documents.findByKey(clientId, parsed.key);
+    if (!existing) throw err;
+    doc = await documents.saveWithItems(existing.id, data, parsed.items);
+  }
   const status = await auditStoredDocument(doc.id);
   return { outcome: existing ? 'atualizado' : 'novo', status };
 }
