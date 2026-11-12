@@ -23,7 +23,7 @@ export const listForDashboard = (clientId: string, direction: Prisma.DocumentWhe
     orderBy: { issuedAt: 'asc' },
     select: {
       id: true, number: true, status: true, total: true, direction: true, emitterName: true, emitterCnpj: true,
-      recipientName: true, recipientCnpj: true, auditedAt: true,
+      recipientName: true, recipientCnpj: true, auditedAt: true, issuedAt: true,
       findings: { where: { severity: { in: ['erro', 'atencao'] } }, select: { ruleCode: true, severity: true } },
     },
   });

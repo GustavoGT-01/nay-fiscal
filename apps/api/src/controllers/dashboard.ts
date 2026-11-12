@@ -47,7 +47,7 @@ export async function dashboard(req: FastifyRequest): Promise<DashboardDTO> {
     barcode: docs.map((d) => {
       const top = [...d.findings].sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity])[0];
       return {
-        id: d.id, number: d.number, status: d.status as NoteStatus, total: d.total, counterpart: counterpart(d).name,
+        id: d.id, number: d.number, status: d.status as NoteStatus, issuedAt: d.issuedAt.toISOString(), total: d.total, counterpart: counterpart(d).name,
         topFinding: top ? rules.get(top.ruleCode)?.title ?? null : null,
         weight: d.total > maxV * 0.5 ? 3 : d.total > maxV * 0.15 ? 2 : 1,
       };
