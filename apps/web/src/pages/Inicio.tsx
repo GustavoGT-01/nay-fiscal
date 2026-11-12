@@ -32,7 +32,10 @@ export function Inicio() {
     setFills(false);
     const a = setTimeout(() => setIntro(false), 2200);
     const b = setTimeout(() => setFills(true), 500);
-    return () => { clearTimeout(a); clearTimeout(b); };
+    const skip = () => { setIntro(false); setFills(true); };
+    window.addEventListener('pointerdown', skip, { once: true });
+    window.addEventListener('keydown', skip, { once: true });
+    return () => { clearTimeout(a); clearTimeout(b); window.removeEventListener('pointerdown', skip); window.removeEventListener('keydown', skip); };
   }, [client?.id]);
 
   if (!client) return <section className="view on"><EmptyState icon="ti-building-store" title="Cadastre seu primeiro cliente" text="As notas e a auditoria aparecem aqui depois que você cadastrar um cliente." /></section>;
