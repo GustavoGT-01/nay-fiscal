@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../config/db.js';
+import { DOC_MONEY, ITEM_MONEY, fromDb, toDb } from '../lib/money.js';
 
 export const countByClientAndStatus = (clientIds: string[]) =>
   prisma.document.groupBy({ by: ['clientId', 'status'], _count: true, where: { clientId: { in: clientIds } } });
@@ -26,7 +27,7 @@ export const listForDashboard = (clientId: string, direction: Prisma.DocumentWhe
       recipientName: true, recipientCnpj: true, auditedAt: true,
       findings: { where: { severity: { in: ['erro', 'atencao'] } }, select: { ruleCode: true, severity: true } },
     },
-  });
+  }).then(fromDb);
 
 export const count = (where: Prisma.DocumentWhereInput) => prisma.document.count({ where });
 
@@ -37,14 +38,14 @@ export const listPage = (where: Prisma.DocumentWhereInput, skip: number, take: n
       items: { select: { cfop: true }, take: 1, orderBy: { n: 'asc' } },
       findings: { where: { severity: { in: ['erro', 'atencao', 'a_verificar'] } }, select: { ruleCode: true, severity: true } },
     },
-  });
+  }).then(fromDb);
 
 export const listNfseForSummary = (where: Prisma.DocumentWhereInput) =>
   prisma.document.findMany({ where, select: { nfse: true, status: true, direction: true } });
 
 /** Nota (do escritorio) com itens e achados. */
 export const findFullOfOffice = (id: string, officeId: string) =>
-  prisma.document.findFirst({ where: { id, client: { officeId } }, include: { items: { orderBy: { n: 'asc' } }, findings: true } });
+  prisma.document.findFirst({ where: { id, client: { officeId } }, include: { items: { orderBy: { n: 'asc' } }, findings: true } }).then(fromDb);
 
 /** Nota (do escritorio) com a contagem do que sai junto ao apagar. */
 export const findForDelete = (id: string, officeId: string) =>
@@ -55,10 +56,10 @@ export const findForDelete = (id: string, officeId: string) =>
 
 export const remove = (id: string) => prisma.document.delete({ where: { id } });
 
-export const findWithItems = (id: string) => prisma.document.findUniqueOrThrow({ where: { id }, include: { items: true } });
+export const findWithItems = (id: string) => prisma.document.findUniqueOrThrow({ where: { id }, include: { items: true } }).then(fromDb);
 
 export const findByKey = (clientId: string, key: string) =>
-  prisma.document.findUnique({ where: { clientId_key: { clientId, key } } });
+  prisma.document.findUnique({ where: { clientId_key: { clientId, key } } }).then(fromDb);
 
 /** Cliente dono da nota com esta chave, dentro do escritorio. */
 export const findOwnerByKey = (key: string, officeId: string) =>
@@ -69,15 +70,17 @@ export const markCancelled = (id: string) => prisma.document.update({ where: { i
 /** Grava a nota e os itens numa unica transacao: ou entra tudo, ou nada. */
 export const saveWithItems = (
   existingId: string | null,
-  data: Prisma.DocumentUncheckedCreateInput,
-  items: Omit<Prisma.DocumentItemUncheckedCreateInput, 'documentId'>[],
+  data: object,
+  items: object[],
 ) =>
   prisma.$transaction(async (tx) => {
+    // entra em reais (como o parser entrega) e vira centavos so aqui
+    const docData = toDb(data, DOC_MONEY) as Prisma.DocumentUncheckedCreateInput;
     const doc = existingId
-      ? await tx.document.update({ where: { id: existingId }, data: { ...data, items: { deleteMany: {} } } })
-      : await tx.document.create({ data });
-    await tx.documentItem.createMany({ data: items.map((i) => ({ ...i, documentId: doc.id })) });
-    return doc;
+      ? await tx.document.update({ where: { id: existingId }, data: { ...docData, items: { deleteMany: {} } } })
+      : await tx.document.create({ data: docData });
+    await tx.documentItem.createMany({ data: items.map((i) => ({ ...toDb(i, ITEM_MONEY), documentId: doc.id }) as Prisma.DocumentItemUncheckedCreateInput) });
+    return fromDb(doc);
   });
 
 export const idsForAudit = (clientId: string, from?: Date, to?: Date) =>
