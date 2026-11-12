@@ -18,3 +18,5 @@ doc/testes/nfe-60056.html
 doc/testes/nfe-60056.pdf
 doc/testes/resultados.json
 apps/api/prisma/test-*.db*
+apps/desktop/app/
+apps/desktop/release/

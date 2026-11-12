@@ -44,7 +44,8 @@ export function Login() {
     el.style.setProperty('--my', `${e.clientY - b.top}px`);
   };
 
-  const demo = import.meta.env.DEV && ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  // VITE_DEMO_HINT=1: build de demonstracao (instalador desktop); o hostname local continua obrigatorio
+  const demo = (import.meta.env.DEV || import.meta.env.VITE_DEMO_HINT === '1') && ['localhost', '127.0.0.1'].includes(window.location.hostname);
   const fill = (em: string) => { if (!busy) { setEmail(em); setPassword('nay12345'); setErr(''); } };
   const badEmail = !!err && !email.trim();
   const badPass = !!err && !password;

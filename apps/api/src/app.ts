@@ -15,7 +15,8 @@ import { syncRules } from './models/rule.js';
 import { clientIp } from './services/client-ip.js';
 import { MAX_UPLOAD_FILE_BYTES, MAX_UPLOAD_FILES } from './services/ingest/limits.js';
 
-const WEB_DIST = fileURLToPath(new URL('../../web/dist/', import.meta.url));
+// NAY_WEB_DIST: o app desktop (Electron) empacota o front fora da arvore do repositorio
+const WEB_DIST = process.env.NAY_WEB_DIST || fileURLToPath(new URL('../../web/dist/', import.meta.url));
 
 
 /** Monta a API sem abrir porta (usado pelo server.ts e pelos testes). */
