@@ -4,14 +4,14 @@ Levantamento feito em 11/11/2026, após a reorganização em MVC. Cada item cita
 
 ## Alta prioridade (segurança e integridade dos dados)
 
-> Atualizado em 12/11/2026 após a auditoria de segurança (`doc/auditoria-seguranca.md`): itens 1 a 4 resolvidos; 6 e 7 em parte.
+> Atualizado em 12/11/2026 após a auditoria de segurança (`doc/auditoria-seguranca.md`): itens 1 a 6 resolvidos; 7 em parte.
 
 1. ✅ **Segredo e CORS.** *(resolvido)* `JWT_SECRET` cai num valor fixo quando não definido, e o CORS aceita qualquer origem sem `WEB_ORIGIN` (`apps/api/src/config/env.ts`, `app.ts`). Fazer a API falhar ao subir sem segredo forte e fixar a origem permitida.
 2. ✅ **Login e sessão.** *(resolvido: rate-limit, helmet, cookie httpOnly, tokenVersion)* Sem limite de tentativas nem `helmet`. O refresh token (7 dias) fica em `localStorage` e não pode ser revogado. Trocar a senha pelo script `senha.ts` não derruba sessões abertas. Adicionar rate-limit, cabeçalhos de segurança e revogação (versão de token por usuário).
 3. ✅ **Rotas sem checagem de permissão.** *(resolvido para runs e uploads; notificações seguem só com login)* `GET /api/audit/runs/:id`, `GET /api/uploads/:id` e `/api/notifications` usam só `authenticate`, sem `can(...)`.
 4. ✅ **ZIP sem limites.** *(resolvido, com fila única de importação)* O envio lê o ZIP inteiro em memória, sem limite de entradas nem de tamanho descompactado (risco de zip bomb). Limitar número de arquivos, tamanho por entrada e total (`services/ingest/zip.ts`).
-5. **Dinheiro em `Float`.** Valores fiscais em `Float` acumulam erro de arredondamento (`schema.prisma`, modelo `Document` e itens). Migrar para centavos inteiros ou `Decimal`.
-6. ◐ **Tarefas em segundo plano frágeis.** *(em parte: tarefas presas viram ERRO ao reiniciar, o motivo do erro é gravado e só uma auditoria roda por cliente; falta transação no upsert)* Importação e auditoria rodam dentro do processo. Após um restart, o status fica em `PROCESSANDO`/`RODANDO` para sempre. O erro por arquivo é engolido, sem registrar o motivo, e o `upsert` do documento com seus itens não está em transação (`services/ingest/`).
+5. ✅ **Dinheiro em `Float`.** *(resolvido: centavos `BigInt` no banco, conversão para reais só em `models/` via `lib/money.ts`; `unitValue`, `qty` e alíquotas seguem em `Float`. Bancos antigos precisam ser recriados com `npm run db:setup`)* Valores fiscais em `Float` acumulam erro de arredondamento (`schema.prisma`, modelo `Document` e itens). Migrar para centavos inteiros ou `Decimal`.
+6. ✅ **Tarefas em segundo plano frágeis.** *(resolvido: tarefas presas viram ERRO ao reiniciar, o motivo do erro é gravado, só uma auditoria roda por cliente e a nota com seus itens grava numa transação, tratando importação concorrente da mesma chave)* Importação e auditoria rodam dentro do processo. Após um restart, o status fica em `PROCESSANDO`/`RODANDO` para sempre. O erro por arquivo é engolido, sem registrar o motivo, e o `upsert` do documento com seus itens não está em transação (`services/ingest/`).
 
 ## Média prioridade
 
