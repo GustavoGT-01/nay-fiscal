@@ -42,7 +42,7 @@
 
 .nf-bars{display:flex;align-items:flex-end;gap:4px;height:100px;margin-top:40px}
 .nf-bar{flex:1 1 0;min-width:3px;border-radius:3px 3px 1px 1px;background:#C9B8FF;transform-origin:bottom;transition:opacity .25s,filter .25s;animation:nf-grow .9s cubic-bezier(.2,.8,.2,1) both,nf-breathe 2.8s ease-in-out infinite}
-.nf-bar.err{background:#FF7A5C}
+.nf-bar.nf-bar-err{background:#FF7A5C}
 .nf-bars:hover .nf-bar{opacity:.35}
 .nf-bars .nf-bar:hover{opacity:1;filter:brightness(1.15)}
 .nf-legend{display:flex;gap:18px;margin-top:14px;font-size:12px;color:#C3B4E8;animation:nf-fade-up .8s 1.4s both}

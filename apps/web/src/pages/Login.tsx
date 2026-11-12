@@ -75,7 +75,7 @@ export function Login() {
               <span className="nf-chip"><i />XML NF-e</span>
             </div>
             <div className="nf-bars" role="img" aria-label="Ilustração: notas importadas, algumas com erro">
-              {bars.map((b, i) => <div key={i} className={b.e ? 'nf-bar err' : 'nf-bar'} style={{ height: `${b.h}%`, animationDelay: b.d }} />)}
+              {bars.map((b, i) => <div key={i} className={b.e ? 'nf-bar nf-bar-err' : 'nf-bar'} style={{ height: `${b.h}%`, animationDelay: b.d }} />)}
             </div>
             <div className="nf-legend" aria-hidden="true">
               <span><b />Notas válidas</span>
