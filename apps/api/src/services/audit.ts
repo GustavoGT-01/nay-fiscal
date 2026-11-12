@@ -41,6 +41,9 @@ export async function auditStoredDocument(docId: string, rules?: RuleSeed[], ctx
 
 /** Roda a auditoria de todas as notas do cliente (opcionalmente filtradas por periodo). */
 export async function runClientAudit(clientId: string, from?: Date, to?: Date) {
+  if (await auditRuns.findRunning(clientId)) {
+    throw Object.assign(new Error('Já existe uma auditoria rodando para este cliente. Aguarde terminar.'), { statusCode: 409 });
+  }
   const docs = await documents.idsForAudit(clientId, from, to);
   const run = await auditRuns.createRun(clientId, docs.length);
   // processa em segundo plano; o front acompanha por GET /api/audit/runs/:id

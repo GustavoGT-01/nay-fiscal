@@ -13,20 +13,26 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:clear": "tsx prisma/clear.ts",
     "senha": "tsx prisma/senha.ts",
-    "exemplos:nfse": "tsx prisma/exemplos-nfse.ts"
+    "exemplos:nfse": "tsx prisma/exemplos-nfse.ts",
+    "checar-senhas": "tsx prisma/checar-senhas.ts",
+    "start:web": "tsx src/server-web.ts"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.1.5",
     "@fastify/cors": "^10.0.2",
-    "@fastify/jwt": "^9.0.4",
+    "@fastify/helmet": "^13.2.0",
+    "@fastify/jwt": "^10.2.7",
     "@fastify/multipart": "^9.0.3",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/static": "^10.1.10",
     "@nay/shared": "*",
     "@prisma/client": "^6.3.1",
     "bcryptjs": "^2.4.3",
     "exceljs": "^4.4.0",
-    "fast-xml-parser": "^4.5.1",
+    "fast-xml-parser": "^5.12.0",
     "fastify": "^5.2.1",
     "yauzl": "^3.2.0",
-    "zod": "^3.24.1"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -34,6 +40,6 @@
     "@types/yauzl": "^2.10.3",
     "prisma": "^6.3.1",
     "tsx": "^4.19.2",
-    "vitest": "^3.0.5"
+    "vitest": "^3.2.7"
   }
 }

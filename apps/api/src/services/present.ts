@@ -23,7 +23,7 @@ const FIELD_TAG: Record<string, string> = {
 /** Rotulos legiveis para valores internos. */
 const pretty = (v: string) => (v === 'ausente' ? 'ausente' : v === 'informado' ? 'informado' : v);
 
-function fill(tpl: string | null, f: Finding, item: DocumentItem | null, doc: Document) {
+function fill(tpl: string | null, f: Finding, item: DocumentItem | null, doc: DocLike) {
   if (!tpl) return null;
   const cst = f.expected.slice(0, 3);
   return tpl
@@ -60,7 +60,8 @@ function prettyXml(xml: string) {
 }
 
 /** Recorta o <det> do item no XML para o botao "Ver no XML". */
-function xmlSnippet(doc: Document, item: DocumentItem | null) {
+function xmlSnippet(doc: DocLike, item: DocumentItem | null) {
+  if (!doc.xml) return null; // exportacao carrega a nota sem o XML
   if (doc.model === 'NFSE') {
     // NFS-e: valores calculados pela Sefin + servico e tributos declarados na DPS
     const nfseVal = doc.xml.match(/<infNFSe[\s\S]*?(<valores>[\s\S]*?<\/valores>)/)?.[1] ?? '';
@@ -104,7 +105,10 @@ export function supplierMessage(doc: Document, checks: FindingDTO[], cceNote: st
   return lines.join('\n');
 }
 
-export function presentFinding(f: Finding, rule: Rule | undefined, item: DocumentItem | null, doc: Document): FindingDTO {
+/** Nota com ou sem o XML bruto (a exportacao nao carrega o XML). */
+type DocLike = Omit<Document, 'xml'> & { xml?: string };
+
+export function presentFinding(f: Finding, rule: Rule | undefined, item: DocumentItem | null, doc: DocLike): FindingDTO {
   const okTitle: Record<string, string> = {
     'chave-dv': `Chave de acesso válida (DV ${f.observed})`,
     'situacao-sefaz': 'Autorizada na SEFAZ (cStat 100)',

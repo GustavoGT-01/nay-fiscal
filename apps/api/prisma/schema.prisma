@@ -36,6 +36,8 @@ model User {
   passwordHash String
   role         String   @default("ANALISTA") // ADMIN | OWNER | ANALISTA
   active       Boolean  @default(true)
+  // sobe a cada troca de senha/"sair de todos": tokens emitidos antes deixam de valer
+  tokenVersion Int      @default(0)
   officeId     String
   office       Office   @relation(fields: [officeId], references: [id])
   profileId    String?

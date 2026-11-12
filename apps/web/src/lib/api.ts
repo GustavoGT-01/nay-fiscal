@@ -1,36 +1,41 @@
-/** Cliente HTTP da API com renovacao automatica do token. */
+/**
+ * Cliente HTTP da API com renovacao automatica do token.
+ *
+ * Seguranca: o token de acesso (15 min) fica so na memoria da aba; o refresh token fica num
+ * cookie httpOnly que o JavaScript nao consegue ler: um XSS nao leva o token embora (mas ainda
+ * agiria como o usuario enquanto a pagina estiver aberta; a defesa principal e a CSP).
+ */
 
-const KEY = 'nay.tokens';
-
-interface Tokens { accessToken: string; refreshToken: string }
+let accessToken: string | null = null;
 
 export const tokens = {
-  get(): Tokens | null {
-    try { return JSON.parse(localStorage.getItem(KEY) ?? 'null'); } catch { return null; }
-  },
-  set(t: Tokens | null) {
-    try { t ? localStorage.setItem(KEY, JSON.stringify(t)) : localStorage.removeItem(KEY); } catch { /* armazenamento indisponivel */ }
+  get: () => accessToken,
+  set(t: string | null) {
+    accessToken = t;
   },
 };
+
+// versoes antigas guardavam os tokens no localStorage: apaga o que tiver sobrado
+try { localStorage.removeItem('nay.tokens'); } catch { /* armazenamento indisponivel */ }
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
-let refreshing: Promise<boolean> | null = null;
-async function refresh(): Promise<boolean> {
-  const t = tokens.get();
-  if (!t) return false;
-  refreshing ??= fetch('/api/auth/refresh', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: t.refreshToken }),
-  })
+let refreshing: Promise<unknown | null> | null = null;
+
+/** Pede um token novo usando o cookie de sessao. Devolve o corpo ({ accessToken, user }) ou null. */
+export function refreshSession<T = unknown>(): Promise<T | null> {
+  refreshing ??= fetch('/api/auth/refresh', { method: 'POST', credentials: 'same-origin' })
     .then(async (r) => {
-      if (!r.ok) { tokens.set(null); return false; }
-      tokens.set(await r.json());
-      return true;
+      if (!r.ok) { tokens.set(null); return null; }
+      const body = await r.json();
+      tokens.set(body.accessToken);
+      return body;
     })
+    .catch(() => null)
     .finally(() => { refreshing = null; });
-  return refreshing;
+  return refreshing as Promise<T | null>;
 }
 
 export const onUnauthorized = { cb: () => {} };
@@ -38,11 +43,11 @@ export const onUnauthorized = { cb: () => {} };
 export async function api<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
   const t = tokens.get();
   const headers = new Headers(init.headers);
-  if (t) headers.set('Authorization', `Bearer ${t.accessToken}`);
+  if (t) headers.set('Authorization', `Bearer ${t}`);
   if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json');
-  const res = await fetch(path, { ...init, headers });
-  if (res.status === 401 && retry && t && !path.startsWith('/api/auth/')) {
-    if (await refresh()) return api<T>(path, init, false);
+  const res = await fetch(path, { ...init, headers, credentials: 'same-origin' });
+  if (res.status === 401 && retry && !path.startsWith('/api/auth/')) {
+    if (await refreshSession()) return api<T>(path, init, false);
     onUnauthorized.cb();
   }
   if (!res.ok) {

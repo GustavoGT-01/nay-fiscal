@@ -26,20 +26,23 @@ if not exist "apps\api\.env" (
   copy "apps\api\.env.example" "apps\api\.env" >nul
 )
 
+rem segredo de sessao proprio (nunca o do exemplo, que e publico)
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\garantir-segredo.ps1"
+
 if not exist "apps\api\prisma\dev.db" (
   echo  Criando o banco de dados com dados de demonstracao...
   call npm run db:setup
   if errorlevel 1 goto erro
 ) else (
-  rem atualiza a estrutura do banco sem apagar dados
+  rem atualiza a estrutura do banco (e o cliente Prisma) sem apagar dados
   pushd apps\api
-  call npx prisma db push --skip-generate >nul
+  call npx prisma db push >nul
   popd
 )
 
 echo.
 echo  Abrindo http://localhost:5173 ...
-echo  Login de demonstracao: admin@nayfiscal.dev / nay12345
+echo  Login de demonstracao: veja o README (troque as senhas antes de usar o tunel).
 echo  Para parar o servidor, feche esta janela ou aperte Ctrl+C.
 echo.
 if not defined NAY_NO_BROWSER start "" cmd /c "timeout /t 8 /nobreak >nul & start http://localhost:5173"

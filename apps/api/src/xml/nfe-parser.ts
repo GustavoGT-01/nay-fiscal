@@ -114,7 +114,18 @@ function firstChild(group: Record<string, unknown> | undefined): Record<string, 
   return k ? (group[k] as Record<string, unknown>) : undefined;
 }
 
+/**
+ * XML fiscal nunca tem DOCTYPE nem entidades declaradas. Recusar antes de interpretar evita
+ * expansao de entidades (billion laughs) e qualquer variacao de XXE.
+ */
+const MAX_XML_CHARS = 5 * 1024 * 1024;
+function assertSafeXml(xml: string) {
+  if (xml.length > MAX_XML_CHARS) throw new Error('XML grande demais.');
+  if (/<!DOCTYPE|<!ENTITY/i.test(xml)) throw new Error('XML com DOCTYPE/ENTITY não é aceito.');
+}
+
 export function parseFiscalXml(xml: string): ParseResult {
+  assertSafeXml(xml);
   const doc = parser.parse(xml);
 
   // NFS-e nacional e seu evento de cancelamento

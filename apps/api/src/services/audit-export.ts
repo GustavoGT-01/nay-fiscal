@@ -16,9 +16,19 @@ export function exportRows(findings: ExportFinding[], rules: Map<string, Rule>) 
   });
 }
 
+/**
+ * Injecao de formula (CSV injection): textos do XML como `=HYPERLINK(...)` ou `@SUM(...)`
+ * virariam formula ao abrir no Excel. Prefixar com apostrofo faz o Excel tratar como texto.
+ * Numeros negativos (-12,50) continuam numeros.
+ */
+export function neutralizeFormula(s: string) {
+  if (/^[=+\-@\t\r]/.test(s) && !/^-?\d+([.,]\d+)*$/.test(s)) return `'${s}`;
+  return s;
+}
+
 /** CSV com BOM (o Excel abre com acentos certos) e ponto e virgula. */
 export function toCsv(rows: unknown[][]) {
-  const esc = (v: unknown) => `"${String(v).replaceAll('"', '""')}"`;
+  const esc = (v: unknown) => `"${neutralizeFormula(String(v ?? '')).replaceAll('"', '""')}"`;
   return '﻿' + [EXPORT_HEADER, ...rows].map((r) => r.map(esc).join(';')).join('\r\n');
 }
 
