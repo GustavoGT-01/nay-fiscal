@@ -140,19 +140,19 @@ model Document {
   additionalInfo String         @default("")
   /// so NFS-e: JSON com servico, ISS, retencoes (ver NfseData em src/xml/nfse-parser.ts)
   nfse           String?
-  vProd          Float          @default(0)
-  vFrete         Float          @default(0)
-  vSeg           Float          @default(0)
-  vDesc          Float          @default(0)
-  vOutro         Float          @default(0)
-  vIpi           Float          @default(0)
-  total          Float          @default(0)
-  vBc            Float          @default(0)
-  vIcms          Float          @default(0)
-  vPis           Float          @default(0)
-  vCofins        Float          @default(0)
-  vIbs           Float          @default(0)
-  vCbs           Float          @default(0)
+  vProd          BigInt          @default(0)
+  vFrete         BigInt          @default(0)
+  vSeg           BigInt          @default(0)
+  vDesc          BigInt          @default(0)
+  vOutro         BigInt          @default(0)
+  vIpi           BigInt          @default(0)
+  total          BigInt          @default(0)
+  vBc            BigInt          @default(0)
+  vIcms          BigInt          @default(0)
+  vPis           BigInt          @default(0)
+  vCofins        BigInt          @default(0)
+  vIbs           BigInt          @default(0)
+  vCbs           BigInt          @default(0)
   cStat          String?
   protocol       String?
   cancelled      Boolean        @default(false)
@@ -181,21 +181,21 @@ model DocumentItem {
   unit        String    @default("")
   qty         Float     @default(0)
   unitValue   Float     @default(0)
-  total       Float     @default(0)
+  total       BigInt     @default(0)
   icmsTable   String? // CST | CSOSN
   cstIcms     String?
-  vIcms       Float     @default(0)
+  vIcms       BigInt     @default(0)
   cstPis      String?
-  vPis        Float     @default(0)
+  vPis        BigInt     @default(0)
   cstCofins   String?
-  vCofins     Float     @default(0)
+  vCofins     BigInt     @default(0)
   hasIbsCbs   Boolean   @default(false)
   cstIbsCbs   String?
   cClassTrib  String?
   pIbs        Float     @default(0)
-  vIbs        Float     @default(0)
+  vIbs        BigInt     @default(0)
   pCbs        Float     @default(0)
-  vCbs        Float     @default(0)
+  vCbs        BigInt     @default(0)
   findings    Finding[]
 }
 

@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../config/db.js';
+import { fromDb } from '../lib/money.js';
 
 /** Regras com mais itens com erro (painel Inicio). */
 export const errorItemsByRule = (where: Prisma.FindingWhereInput) =>
@@ -21,7 +22,7 @@ export const listForRuleGroups = (where: Prisma.FindingWhereInput) =>
 
 export const listForExport = (where: Prisma.FindingWhereInput) =>
   // sem a coluna xml (pesada) e com teto de linhas: exportar nao pode derrubar a API
-  prisma.finding.findMany({ where, include: { document: { omit: { xml: true } }, item: true }, orderBy: [{ document: { issuedAt: 'desc' } }], take: EXPORT_MAX_ROWS });
+  prisma.finding.findMany({ where, include: { document: { omit: { xml: true } }, item: true }, orderBy: [{ document: { issuedAt: 'desc' } }], take: EXPORT_MAX_ROWS }).then(fromDb);
 
 export const EXPORT_MAX_ROWS = 50_000;
 

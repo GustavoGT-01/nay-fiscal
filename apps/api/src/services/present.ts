@@ -1,6 +1,11 @@
-import type { Document, DocumentItem, Finding, Rule } from '@prisma/client';
+import type { Document as DbDocument, DocumentItem as DbDocumentItem, Finding, Rule } from '@prisma/client';
+import type { Reais } from '../lib/money.js';
 import type { FindingDTO, RuleAction, Severity } from '@nay/shared';
 import { actionFor } from '../engine/actions.js';
+
+/** Notas e itens chegam dos models em reais (number); no banco ficam em centavos. */
+type Document = Reais<DbDocument>;
+type DocumentItem = Reais<DbDocumentItem>;
 
 const FIELD_TAG: Record<string, string> = {
   cclass_trib: 'cClassTrib',
