@@ -63,7 +63,7 @@
 .db-col::before{content:"";position:absolute;inset:-6px -4px 0;border-radius:10px 10px 0 0;background:var(--db-s1);opacity:0;transition:opacity .2s}
 .db-col:hover::before,.db-col:focus-visible::before,.db-col.is-hot::before{opacity:1}
 .db-col:focus-visible{box-shadow:0 0 0 2px var(--text)}
-.db-stack{position:relative;height:100%;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;transform-origin:bottom;animation:db-grow 1s var(--ease-out) both}
+.db-stack{position:relative;width:100%;height:100%;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;transform-origin:bottom;animation:db-grow 1s var(--ease-out) both}
 .db-s{width:100%;border-radius:4px;transition:height .7s var(--ease-out),opacity .3s,filter .2s;min-height:0}
 .db-s.s-ok{background:var(--db-ok)}
 .db-s.s-err{background:var(--db-err)}
