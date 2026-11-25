@@ -95,6 +95,8 @@ model Upload {
   message     String?
   createdAt   DateTime   @default(now())
   documents   Document[]
+
+  @@index([officeId, createdAt])
 }
 
 model Document {
@@ -167,6 +169,12 @@ model Document {
 
   @@unique([clientId, key])
   @@index([clientId, issuedAt])
+  /// groupBy por direcao e veredito do painel (sempre filtrado por cliente)
+  @@index([clientId, direction, verdict])
+  /// contagem por situacao na lista de clientes e no painel
+  @@index([clientId, status])
+  /// achar o dono de uma nota pela chave sozinha (evento de cancelamento no envio)
+  @@index([key])
 }
 
 model DocumentItem {
@@ -197,6 +205,8 @@ model DocumentItem {
   pCbs        Float     @default(0)
   vCbs        BigInt     @default(0)
   findings    Finding[]
+
+  @@index([documentId])
 }
 
 model Rule {
@@ -236,7 +246,7 @@ model Finding {
   expected   String
   createdAt  DateTime      @default(now())
 
-  @@index([documentId])
+  @@index([documentId, severity])
   @@index([ruleCode, severity])
 }
 
@@ -249,6 +259,8 @@ model AuditRun {
   processed  Int       @default(0)
   startedAt  DateTime  @default(now())
   finishedAt DateTime?
+
+  @@index([clientId, status])
 }
 
 model Notification {
@@ -262,4 +274,6 @@ model Notification {
   severity  String    @default("INFO")
   readAt    DateTime?
   createdAt DateTime  @default(now())
+
+  @@index([officeId, createdAt])
 }

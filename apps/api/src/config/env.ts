@@ -36,6 +36,10 @@ export const env = {
   get serveWeb() {
     return process.env.SERVE_WEB === '1';
   },
+  /** TRUST_CF_IP=1: aceita o CF-Connecting-IP vindo do proprio computador (testes; o tunel ja usa SERVE_WEB). */
+  get trustCfIp() {
+    return process.env.TRUST_CF_IP === '1';
+  },
   get isTest() {
     return process.env.VITEST === 'true' || process.env.NODE_ENV === 'test';
   },

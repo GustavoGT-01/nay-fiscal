@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { UploadDTO } from '@nay/shared';
 import { ownClient } from '../middleware/auth.js';
 import * as uploads from '../models/upload.js';
+import { safeJson } from '../lib/json.js';
 import { processUpload } from '../services/ingest/process-upload.js';
 import { xmlsFromZip } from '../services/ingest/zip.js';
 import { MAX_UPLOAD_TOTAL_BYTES, MAX_XML_BYTES } from '../services/ingest/limits.js';
@@ -25,7 +26,7 @@ const safeName = (n: string) => (n.split(/[\\/]/).pop() ?? '').replace(/[\u0000-
 const uploadDTO = (u: uploads.UploadWithClient): UploadDTO => ({
   id: u.id, fileName: u.fileName, kind: u.kind, status: u.status, total: u.total, processed: u.processed,
   okCount: u.okCount, errorCount: u.errorCount, skipped: u.skipped, message: u.message, createdAt: u.createdAt.toISOString(),
-  clientName: u.client?.name ?? null, createdClients: JSON.parse(u.createdClients) as string[],
+  clientName: u.client?.name ?? null, createdClients: safeJson<string[]>(u.createdClients, []),
 });
 
 export async function createUploads(req: FastifyRequest, reply: FastifyReply) {

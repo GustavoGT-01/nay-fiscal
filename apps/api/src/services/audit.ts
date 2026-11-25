@@ -40,12 +40,24 @@ export async function auditStoredDocument(docId: string, rules?: RuleSeed[], ctx
 }
 
 /** Roda a auditoria de todas as notas do cliente (opcionalmente filtradas por periodo). */
+const starting = new Set<string>(); // clientes cuja auditoria esta sendo criada neste instante
+
+const jaRodando = () => Object.assign(new Error('Já existe uma auditoria rodando para este cliente. Aguarde terminar.'), { statusCode: 409 });
+
 export async function runClientAudit(clientId: string, from?: Date, to?: Date) {
-  if (await auditRuns.findRunning(clientId)) {
-    throw Object.assign(new Error('Já existe uma auditoria rodando para este cliente. Aguarde terminar.'), { statusCode: 409 });
+  // Checar no banco e criar a rodada sao dois passos com `await` no meio: duas chamadas simultaneas
+  // passariam as duas pela checagem. O Set e consultado e preenchido sem `await`, entao uma so entra.
+  if (starting.has(clientId)) throw jaRodando();
+  starting.add(clientId);
+  let docs: Awaited<ReturnType<typeof documents.idsForAudit>>;
+  let run: Awaited<ReturnType<typeof auditRuns.createRun>>;
+  try {
+    if (await auditRuns.findRunning(clientId)) throw jaRodando();
+    docs = await documents.idsForAudit(clientId, from, to);
+    run = await auditRuns.createRun(clientId, docs.length);
+  } finally {
+    starting.delete(clientId);
   }
-  const docs = await documents.idsForAudit(clientId, from, to);
-  const run = await auditRuns.createRun(clientId, docs.length);
   // processa em segundo plano; o front acompanha por GET /api/audit/runs/:id
   void (async () => {
     const rules = await activeRules();

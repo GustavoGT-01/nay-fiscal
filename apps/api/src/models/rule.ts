@@ -1,6 +1,7 @@
 import type { Rule } from '@prisma/client';
 import { prisma } from '../config/db.js';
 import type { RuleSeed } from '../engine/catalog.js';
+import { safeJson } from '../lib/json.js';
 
 export function toRuleSeed(r: Rule): RuleSeed {
   return {
@@ -11,7 +12,7 @@ export function toRuleSeed(r: Rule): RuleSeed {
     mode: r.mode,
     state: r.state as RuleSeed['state'],
     severity: r.severity as RuleSeed['severity'],
-    definition: JSON.parse(r.definition),
+    definition: safeJson<Record<string, unknown>>(r.definition, {}),
     description: r.description,
     what: r.what,
     why: r.why,

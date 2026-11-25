@@ -12,6 +12,7 @@ const API_DIR = fileURLToPath(new URL('..', import.meta.url));
 const DB_FILE = fileURLToPath(new URL('../prisma/test-security.db', import.meta.url));
 process.env.DATABASE_URL = 'file:./test-security.db';
 process.env.JWT_SECRET = 'troque-este-segredo'; // o segredo publico do .env.example: a API deve ignora-lo
+process.env.TRUST_CF_IP = '1'; // os testes simulam IPs diferentes pelo cabecalho do tunel
 
 let app: FastifyInstance;
 let prisma: PrismaClient;
@@ -221,6 +222,46 @@ describe('validacao de entrada', () => {
     const r = await app.inject({ method: 'POST', url: '/api/audit/run', headers: auth(t), payload: { clientId: ids.clientA } });
     expect(r.statusCode).toBe(409);
     await prisma.auditRun.update({ where: { id: running.id }, data: { status: 'CONCLUIDA' } });
+  });
+
+  it('perfil com permissoes corrompidas entra sem nenhuma permissao, em vez de dar "sessao expirou"', async () => {
+    const bcrypt = (await import('bcryptjs')).default;
+    const profile = await prisma.profile.create({ data: { officeId: ids.officeA, name: 'Quebrado', permissions: 'isto nao e json{' } });
+    await prisma.user.create({ data: { name: 'Q', email: 'quebrado@a.test', passwordHash: await bcrypt.hash(PASS, 4), role: 'ANALISTA', officeId: ids.officeA, profileId: profile.id } });
+    const t = await token('quebrado@a.test');
+    const me = await app.inject({ method: 'GET', url: '/api/me', headers: auth(t) });
+    expect(me.statusCode).toBe(200);
+    expect(me.json().permissions).toEqual([]);
+    expect((await app.inject({ method: 'GET', url: `/api/notes?clientId=${ids.clientA}`, headers: auth(t) })).statusCode).toBe(403);
+  });
+
+  it('CF-Connecting-IP so vale com o tunel ligado ou TRUST_CF_IP, nao so por NODE_ENV=test', async () => {
+    const { clientIp } = await import('../src/services/client-ip.js');
+    const req = { headers: { 'cf-connecting-ip': '198.51.100.7' }, ip: '127.0.0.1' } as never;
+    const before = { f: process.env.TRUST_CF_IP, s: process.env.SERVE_WEB };
+    try {
+      delete process.env.TRUST_CF_IP;
+      delete process.env.SERVE_WEB;
+      expect(process.env.NODE_ENV === 'test' || process.env.VITEST === 'true').toBe(true); // o atalho antigo estaria ligado
+      expect(clientIp(req)).toBe('127.0.0.1');
+      process.env.TRUST_CF_IP = '1';
+      expect(clientIp(req)).toBe('198.51.100.7');
+    } finally {
+      if (before.f === undefined) delete process.env.TRUST_CF_IP; else process.env.TRUST_CF_IP = before.f;
+      if (before.s === undefined) delete process.env.SERVE_WEB; else process.env.SERVE_WEB = before.s;
+    }
+  });
+
+  it('duas auditorias disparadas no mesmo instante: so uma entra', async () => {
+    const { runClientAudit } = await import('../src/services/audit.js');
+    const c = await prisma.client.create({ data: { officeId: ids.officeA, name: 'Sem notas', cnpj: '33444555000172' } });
+    const r = await Promise.allSettled([runClientAudit(c.id), runClientAudit(c.id)]);
+    expect(r.filter((x) => x.status === 'fulfilled')).toHaveLength(1);
+    const rejected = r.find((x) => x.status === 'rejected') as PromiseRejectedResult;
+    expect((rejected.reason as { statusCode?: number }).statusCode).toBe(409);
+    expect(await prisma.auditRun.count({ where: { clientId: c.id } })).toBe(1);
+    // espera a rodada (vazia) fechar antes do teste seguinte e do desligamento do banco
+    for (let i = 0; i < 50 && (await prisma.auditRun.count({ where: { clientId: c.id, status: 'RODANDO' } })); i++) await new Promise((ok) => setTimeout(ok, 40));
   });
 
   it('data invalida e pagina negativa dao 400, nao 500', async () => {
