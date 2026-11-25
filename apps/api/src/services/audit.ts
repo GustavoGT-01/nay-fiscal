@@ -19,9 +19,21 @@ export async function auditStoredDocument(docId: string, rules?: RuleSeed[], ctx
   ctx ??= await clientContext(doc.clientId);
   const parsed = parseFiscalXml(doc.xml);
   if (parsed.kind !== 'documento') return;
-  const { findings, status } = auditDocument(parsed as ParsedDocument, rules, ctx, { cancelled: doc.cancelled });
-  const verdict = verdictFor(doc.direction, status, findings, rules);
-  const itemByN = new Map(doc.items.map((i) => [i.n, i.id]));
+  return auditAndStore(docId, parsed as ParsedDocument, doc.direction, doc.cancelled, new Map(doc.items.map((i) => [i.n, i.id])), rules, ctx);
+}
+
+/**
+ * Audita uma nota recem-gravada cujo XML ja foi lido: nao busca a nota (com o XML) de volta nem le o XML de novo,
+ * so os ids dos itens para ligar os achados. E o caminho da importacao.
+ */
+export async function auditParsedDocument(doc: { id: string; direction: string; cancelled: boolean }, parsed: ParsedDocument, rules: RuleSeed[], ctx: ClientContext) {
+  const items = await documents.itemIds(doc.id);
+  return auditAndStore(doc.id, parsed, doc.direction, doc.cancelled, new Map(items.map((i) => [i.n, i.id])), rules, ctx);
+}
+
+async function auditAndStore(docId: string, parsed: ParsedDocument, direction: string, cancelled: boolean, itemByN: Map<number, string>, rules: RuleSeed[], ctx: ClientContext) {
+  const { findings, status } = auditDocument(parsed, rules, ctx, { cancelled });
+  const verdict = verdictFor(direction, status, findings, rules);
   await findings_.replaceAudit(
     docId,
     findings.map((f) => ({

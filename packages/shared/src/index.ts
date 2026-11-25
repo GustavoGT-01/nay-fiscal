@@ -76,7 +76,7 @@ export function cnpjValido(raw: string) {
   if (c.length !== 14 || /^(\d)\1{13}$/.test(c)) return false;
   const dv = (base: string) => {
     const w = base.length === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-    const r = base.split('').reduce((a, d, i) => a + Number(d) * w[i], 0) % 11;
+    const r = base.split('').reduce((a, d, i) => a + Number(d) * (w[i] ?? 0), 0) % 11;
     return r < 2 ? 0 : 11 - r;
   };
   return dv(c.slice(0, 12)) === Number(c[12]) && dv(c.slice(0, 13)) === Number(c[13]);
@@ -229,6 +229,7 @@ export interface SupplierGroupDTO {
 export interface DashboardDTO {
   client: { id: string; name: string } | null;
   totals: { audited: number; ok: number; erro: number; atencao: number; cancelada: number };
+  /** Notas dos ultimos ~15 dias antes da mais recente (a janela do grafico), nao a carteira inteira: ela pode ter centenas de milhares. */
   barcode: { id: string; number: string; status: NoteStatus; issuedAt: string; total: number; counterpart: string; topFinding: string | null; weight: number }[];
   topErrors: { code: string; title: string; items: number }[];
   lastAuditAt: string | null;

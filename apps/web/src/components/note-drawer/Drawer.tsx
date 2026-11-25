@@ -72,7 +72,7 @@ export function NoteDrawer({ id, onClose }: { id: string | null; onClose: () => 
   return (
     <>
       <div className={'scrim' + (id ? ' on' : '')} onClick={onClose} />
-      <aside className={'drawer' + (id ? ' on' : '')} role="dialog" aria-modal="true" aria-labelledby="dTitle" aria-hidden={!id}>
+      <aside className={'drawer' + (id ? ' on' : '')} role="dialog" aria-modal="true" aria-labelledby="dTitle" inert={!id}>
         <div className="d-head">
           <div className="row">
             <div>
@@ -124,7 +124,7 @@ export function NoteDrawer({ id, onClose }: { id: string | null; onClose: () => 
                 ]}
               />
               {list.map((f) => (
-                <Finding key={f.id} f={f} note={n} open={openIdx.has(f.id)} onToggle={() => setOpenIdx((s) => { const x = new Set(s); x.has(f.id) ? x.delete(f.id) : x.add(f.id); return x; })} />
+                <Finding key={f.id} f={f} note={n} open={openIdx.has(f.id)} onToggle={() => setOpenIdx((s) => { const x = new Set(s); if (x.has(f.id)) x.delete(f.id); else x.add(f.id); return x; })} />
               ))}
               {!list.length && <p className="hint" style={{ textAlign: 'center', padding: 30 }}>Nada nesta categoria.</p>}
 

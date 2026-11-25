@@ -1,6 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../config/db.js';
-import { DOC_MONEY, ITEM_MONEY, fromDb, toDb } from '../lib/money.js';
+import { DOC_MONEY, ITEM_MONEY, fromCents, fromDb, toDb } from '../lib/money.js';
 
 export const countByClientAndStatus = (clientIds: string[]) =>
   prisma.document.groupBy({ by: ['clientId', 'status'], _count: true, where: { clientId: { in: clientIds } } });
@@ -17,10 +17,31 @@ export const worstSuppliers = (clientId: string) =>
     orderBy: { _count: { emitterName: 'desc' } }, take: 3,
   });
 
-/** Notas do cliente com os achados que pesam no painel Inicio. */
-export const listForDashboard = (clientId: string, direction: Prisma.DocumentWhereInput) =>
+/** Janela do painel: o grafico mostra 14 dias, contados a partir da nota mais recente. Folga de 1 dia para o fuso do navegador. */
+export const DASHBOARD_WINDOW_DAYS = 15;
+
+/**
+ * Totais e extremos do painel calculados no banco, sem carregar nenhuma nota:
+ * contagem por situacao, data da nota mais recente, ultima auditoria e maior valor.
+ */
+export async function dashboardSummary(clientId: string, direction: Prisma.DocumentWhereInput) {
+  const where = { clientId, ...direction };
+  const [byStatus, agg] = await Promise.all([
+    prisma.document.groupBy({ by: ['status'], _count: true, where }),
+    prisma.document.aggregate({ where, _max: { issuedAt: true, auditedAt: true, total: true } }),
+  ]);
+  return {
+    byStatus: byStatus.map((r) => ({ status: r.status, count: r._count })),
+    latestIssuedAt: agg._max.issuedAt,
+    lastAuditAt: agg._max.auditedAt,
+    maxTotal: agg._max.total === null ? 0 : fromCents(agg._max.total),
+  };
+}
+
+/** Notas do cliente emitidas a partir de `since`, com os achados que pesam no painel Inicio (so a janela do grafico). */
+export const listForDashboard = (clientId: string, direction: Prisma.DocumentWhereInput, since: Date) =>
   prisma.document.findMany({
-    where: { clientId, ...direction },
+    where: { clientId, ...direction, issuedAt: { gte: since } },
     orderBy: { issuedAt: 'asc' },
     select: {
       id: true, number: true, status: true, total: true, direction: true, emitterName: true, emitterCnpj: true,
@@ -93,3 +114,8 @@ export const groupByCustomer = (where: Prisma.DocumentWhereInput) =>
   prisma.document.groupBy({ by: ['recipientCnpj', 'recipientName', 'status'], _count: true, where });
 
 export const countOfClient = (clientId: string) => prisma.document.count({ where: { clientId } });
+/** Numero das notas pelos ids (so para exibir amostras). */
+export const numbersByIds = (ids: string[]) => prisma.document.findMany({ where: { id: { in: ids } }, select: { id: true, number: true } });
+
+/** Id e numero dos itens de uma nota (para ligar os achados aos itens, sem ler a nota inteira). */
+export const itemIds = (documentId: string) => prisma.documentItem.findMany({ where: { documentId }, select: { id: true, n: true } });

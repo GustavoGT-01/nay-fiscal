@@ -3,6 +3,8 @@
   "compilerOptions": {
     "types": ["node"],
     "noEmit": true
+    // "noUncheckedIndexedAccess": true  -> ligado em shared e web; aqui daria ~52 erros (acesso a array/XML por indice).
+    // Ligar quando for corrigindo por arquivo, a comecar pelos parsers (src/xml).
   },
   "include": ["src", "prisma", "test"]
 }

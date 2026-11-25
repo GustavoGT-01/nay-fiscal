@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process';
 import { createHmac } from 'node:crypto';
 import { existsSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { crc32, deflateRawSync } from 'node:zlib';
+import { makeZip } from './helpers/zip.js';
 import type { FastifyInstance } from 'fastify';
 import type { PrismaClient } from '@prisma/client';
 
@@ -34,34 +34,6 @@ async function token(email: string) {
 }
 type Cookie = { name: string; value: string; httpOnly?: boolean; sameSite?: string; path?: string };
 const cookieOf = (r: { cookies: Cookie[] }) => r.cookies.find((c) => c.name === 'nay_rt');
-
-/** ZIP minimo (deflate) para testar limites sem dependencia extra. */
-function makeZip(files: { name: string; data: Buffer; fakeSize?: number }[]) {
-  const locals: Buffer[] = [];
-  const centrals: Buffer[] = [];
-  let offset = 0;
-  for (const f of files) {
-    const comp = deflateRawSync(f.data);
-    const name = Buffer.from(f.name);
-    const crc = crc32(f.data);
-    const size = f.fakeSize ?? f.data.length;
-    const lh = Buffer.alloc(30);
-    lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(8, 8);
-    lh.writeUInt32LE(crc, 14); lh.writeUInt32LE(comp.length, 18); lh.writeUInt32LE(size, 22); lh.writeUInt16LE(name.length, 26);
-    const ch = Buffer.alloc(46);
-    ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(20, 4); ch.writeUInt16LE(20, 6); ch.writeUInt16LE(8, 10);
-    ch.writeUInt32LE(crc, 16); ch.writeUInt32LE(comp.length, 20); ch.writeUInt32LE(size, 24); ch.writeUInt16LE(name.length, 28);
-    ch.writeUInt32LE(offset, 42);
-    locals.push(lh, name, comp);
-    centrals.push(ch, name);
-    offset += lh.length + name.length + comp.length;
-  }
-  const cd = Buffer.concat(centrals);
-  const end = Buffer.alloc(22);
-  end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(files.length, 8); end.writeUInt16LE(files.length, 10);
-  end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(offset, 16);
-  return Buffer.concat([...locals, cd, end]);
-}
 
 beforeAll(async () => {
   for (const f of [DB_FILE, DB_FILE + '-journal']) if (existsSync(f)) rmSync(f);
@@ -252,6 +224,38 @@ describe('validacao de entrada', () => {
     }
   });
 
+  it('parametros de URL fora da lista dao 400 em todas as rotas, e os validos continuam passando', async () => {
+    const t = await token('admin@a.test');
+    const c = `clientId=${ids.clientA}`;
+    const get = async (url: string) => (await app.inject({ method: 'GET', url, headers: auth(t) })).statusCode;
+    const invalidos = [
+      `/api/dashboard?${c}&direction=lateral`,
+      `/api/audit/rules?${c}&direction=lateral`,
+      `/api/audit/suppliers?${c}&direction=x`,
+      `/api/nfse/summary?${c}&direction=x`,
+      `/api/audit/export?${c}&format=pdf`,
+      `/api/audit/export?${c}&from=ontem`,
+      `/api/notes?${c}&status=qualquer`,
+      `/api/notes?${c}&verdict=talvez`,
+      `/api/notes?${c}&model=99`,
+      `/api/notes?${c}&supplier=${'9'.repeat(40)}`,
+    ];
+    for (const url of invalidos) expect(await get(url), url).toBe(400);
+    // id gigante no caminho: o Fastify recusa antes do zod (414); em qualquer caso nunca chega ao banco
+    for (const base of ['/api/notes/', '/api/uploads/', '/api/audit/runs/']) expect([400, 414], base).toContain(await get(base + 'x'.repeat(200)));
+    const validos = [
+      `/api/dashboard?${c}&direction=entrada`,
+      `/api/audit/rules?${c}&direction=all&from=2026-01-01&to=2026-12-31`,
+      `/api/audit/suppliers?${c}&direction=saida`,
+      `/api/nfse/summary?${c}&direction=all`,
+      `/api/audit/export?${c}&format=csv`,
+      `/api/audit/export?${c}`, // sem format: xlsx por padrao
+      `/api/notes?${c}&status=problemas&verdict=correta&model=NFSE&direction=all`,
+      `/api/notes?${c}&status=all`,
+    ];
+    for (const url of validos) expect(await get(url), url).toBe(200);
+  });
+
   it('duas auditorias disparadas no mesmo instante: so uma entra', async () => {
     const { runClientAudit } = await import('../src/services/audit.js');
     const c = await prisma.client.create({ data: { officeId: ids.officeA, name: 'Sem notas', cnpj: '33444555000172' } });
@@ -276,6 +280,52 @@ describe('validacao de entrada', () => {
   });
 });
 
+describe('exportacao: relatorio cortado no teto', () => {
+  const where = () => ({ severity: { not: 'ok' }, document: { clientId: ids.clientA } });
+  let extra = '';
+  beforeAll(async () => {
+    const f = await prisma.finding.create({ data: { documentId: ids.docA, ruleCode: 'R2', field: 'cfop', kind: 'tecnica', severity: 'atencao', observed: 'a', expected: 'b' } });
+    extra = f.id;
+  });
+  afterAll(async () => { await prisma.finding.delete({ where: { id: extra } }); });
+
+  it('o modelo diz quando o teto cortou linhas, e devolve so ate o teto', async () => {
+    const { listForExport } = await import('../src/models/finding.js');
+    const todos = await listForExport(where(), 100);
+    expect(todos.truncated).toBe(false);
+    expect(todos.rows.length).toBeGreaterThanOrEqual(2);
+    const cortado = await listForExport(where(), 1);
+    expect(cortado.truncated).toBe(true);
+    expect(cortado.rows).toHaveLength(1);
+    const exato = await listForExport(where(), todos.rows.length); // no limite exato nao e corte
+    expect(exato.truncated).toBe(false);
+  });
+
+  it('sem corte, a resposta nao traz o aviso', async () => {
+    const t = await token('admin@a.test');
+    for (const format of ['csv', 'xlsx']) {
+      const r = await app.inject({ method: 'GET', url: `/api/audit/export?clientId=${ids.clientA}&format=${format}`, headers: auth(t) });
+      expect(r.statusCode, format).toBe(200);
+      expect(r.headers['x-export-truncated'], format).toBeUndefined();
+    }
+  });
+
+  it('a planilha avisa dentro do arquivo quando foi cortada, e nao avisa quando esta completa', async () => {
+    const { toXlsx } = await import('../src/services/audit-export.js');
+    const ExcelJS = (await import('exceljs')).default;
+    const resumo = async (buf: Buffer) => {
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(buf as never);
+      const texto: string[] = [];
+      wb.getWorksheet('Resumo')!.eachRow((row) => texto.push(String(row.getCell(1).value ?? '')));
+      return texto.join('\n');
+    };
+    const cliente = { name: 'Cliente A', cnpj: '11222333000181' };
+    expect(await resumo(await toXlsx(cliente, [['x']], 50000))).toContain('relatório incompleto');
+    expect(await resumo(await toXlsx(cliente, [['x']]))).not.toContain('incompleto');
+  });
+});
+
 describe('injecao em arquivos gerados', () => {
   it('CSV neutraliza formulas vindas do XML', async () => {
     const t = await token('admin@a.test');
@@ -295,6 +345,15 @@ describe('injecao em arquivos gerados', () => {
     expect(r.body).not.toContain('<img src=x');
     expect(r.body).toContain('&lt;script&gt;');
     expect(r.body).toContain(`script-src 'none'`);
+  });
+
+  it('HTML da nota usa so fontes locais: nao chama o Google nem o libera na CSP', async () => {
+    const t = await token('admin@a.test');
+    const r = await app.inject({ method: 'GET', url: `/api/notes/${ids.docA}/pdf.html`, headers: auth(t) });
+    expect(r.statusCode).toBe(200);
+    expect(r.body).not.toMatch(/googleapis|gstatic/);
+    expect(r.body).toContain("font-src 'self'");
+    expect(r.body).toContain('/fonts/onest-latin.woff2'); // @font-face local, da mesma origem do app
   });
 });
 
@@ -354,6 +413,9 @@ describe('cabecalhos HTTP', () => {
     const r = await app.inject({ method: 'GET', url: '/api/health', headers: { origin: 'https://atacante.example' } });
     expect(r.headers['x-content-type-options']).toBe('nosniff');
     expect(r.headers['content-security-policy']).toContain("frame-ancestors 'none'");
+    // as fontes sao locais: nenhum terceiro liberado para fonte nem estilo
+    expect(r.headers['content-security-policy']).not.toMatch(/googleapis|gstatic/);
+    expect(r.headers['content-security-policy']).toContain("font-src 'self' data:");
     expect(r.headers['access-control-allow-origin']).toBeUndefined();
     const ok = await app.inject({ method: 'GET', url: '/api/health', headers: { origin: 'http://localhost:5173' } });
     expect(ok.headers['access-control-allow-origin']).toBe('http://localhost:5173');

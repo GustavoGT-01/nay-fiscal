@@ -35,7 +35,7 @@ export function ConfirmDialog({ open, title, text, typeToConfirm, confirmLabel =
       if (e.key !== 'Tab' || !boxRef.current) return;
       const els = [...boxRef.current.querySelectorAll<HTMLElement>('input,button:not([disabled])')];
       if (!els.length) return;
-      const first = els[0], last = els[els.length - 1];
+      const first = els[0]!, last = els[els.length - 1]!; // els nao esta vazio (checado acima)
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     };
@@ -55,7 +55,7 @@ export function ConfirmDialog({ open, title, text, typeToConfirm, confirmLabel =
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={textId}
-        aria-hidden={!open}
+        inert={!open}
       >
         {open && (
           <form onSubmit={(e) => { e.preventDefault(); if (ready) onConfirm(); }}>

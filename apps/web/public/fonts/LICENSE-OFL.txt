@@ -1,4 +1,4 @@
-Fontes locais da tela de login (subconjunto latin, extraidas do mockup, baixadas sem alteracao do Google Fonts).
+Fontes locais do app (subconjunto latin, baixadas sem alteracao do Google Fonts).
 Todas sob a SIL Open Font License 1.1, texto abaixo. Mantenha este arquivo junto das fontes.
 
 Bricolage Grotesque
@@ -12,6 +12,10 @@ Copyright 2020 The Inter Project Authors (https://github.com/rsms/inter)
 JetBrains Mono
 
 Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)
+
+Onest
+
+Copyright 2021 The Onest Project Authors (https://github.com/simpals/onest)
 
 -----------------------------------------------------------
 This Font Software is licensed under the SIL Open Font License, Version 1.1.

@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import type { NoteRowDTO } from '@nay/shared';
 import { brl, fmtDate } from '../lib/api';
 import { useSession } from '../lib/session';
-import { Seg, StatusTag, useToast } from '../lib/ui';
+import { QueryError, Seg, StatusTag, useToast } from '../lib/ui';
 import { printNote } from '../lib/print';
 import { docName, useOpenNote } from '../components/note-drawer';
 import { DirectionSeg, useDirection } from '../lib/direction';
@@ -48,7 +48,9 @@ export function Notas() {
   const openNote = useOpenNote();
   const [params, setParams] = useSearchParams();
   const [direction, setDirection] = useDirection();
-  const verdict = (params.get('veredito') ?? '') as keyof typeof VERDICT | '';
+  // valor desconhecido na URL (link antigo, texto digitado) e ignorado: a API recusa veredito fora da lista
+  const rawVerdict = params.get('veredito') ?? '';
+  const verdict = (rawVerdict in VERDICT ? rawVerdict : '') as keyof typeof VERDICT | '';
   const [text, setText] = useState(params.get('q') ?? '');
   const [status, setStatus] = useState<S>('all');
   const [page, setPage] = useState(0);
@@ -82,16 +84,18 @@ export function Notas() {
         )}
       </div>
       <div className="table-wrap">
-        {q.isLoading ? <div className="skel" style={{ height: 300, margin: 16 }} /> : (
+        {q.isLoading ? <div className="skel" style={{ height: 300, margin: 16 }} /> : q.isError ? <QueryError error={q.error} onRetry={() => q.refetch()} what="as notas" /> : (
           <NotesTable rows={q.data?.rows ?? []} onOpen={openNote} empty="Nenhuma nota encontrada. Tente outro número ou limpe o filtro." />
         )}
-        <div className="pager">
-          <span>{total} notas, página {page + 1} de {pages}</span>
-          <span style={{ display: 'flex', gap: 6 }}>
-            <button className="btn" aria-label="Página anterior" onClick={() => setPage((p) => Math.max(0, p - 1))}><i className="ti ti-chevron-left" /></button>
-            <button className="btn" aria-label="Próxima página" onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}><i className="ti ti-chevron-right" /></button>
-          </span>
-        </div>
+        {!q.isError && (
+          <div className="pager">
+            <span>{total} notas, página {page + 1} de {pages}</span>
+            <span style={{ display: 'flex', gap: 6 }}>
+              <button className="btn" aria-label="Página anterior" onClick={() => setPage((p) => Math.max(0, p - 1))}><i className="ti ti-chevron-left" /></button>
+              <button className="btn" aria-label="Próxima página" onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}><i className="ti ti-chevron-right" /></button>
+            </span>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -7,6 +7,7 @@ import { useToast } from '../lib/ui';
 import { useDashboard } from '../hooks/useDashboard';
 import { useNotifications } from '../hooks/useNotifications';
 import { CommandPalette } from './CommandPalette';
+import { ErrorBoundary } from './ErrorBoundary';
 
 export function Shell() {
   const { user, client, clients, setClientId, can, logout } = useSession();
@@ -93,7 +94,7 @@ export function Shell() {
             </div>
           </div>
         </header>
-        <Outlet />
+        <ErrorBoundary key={loc.pathname}><Outlet /></ErrorBoundary>
       </main>
       <nav className="tabbar" aria-label="Navegação">
         {screens.filter((x) => ['inicio', 'notas', 'importar', 'auditoria'].includes(x.key)).map((x) => (

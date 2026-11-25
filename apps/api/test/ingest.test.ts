@@ -15,6 +15,15 @@ vi.mock('../src/models/client.js', async (original) => {
   return { ...m, findById: vi.fn(m.findById) };
 });
 
+vi.mock('../src/xml/nfe-parser.js', async (original) => {
+  const m = await original<typeof import('../src/xml/nfe-parser.js')>();
+  return { ...m, parseFiscalXml: vi.fn(m.parseFiscalXml) };
+});
+vi.mock('../src/models/document.js', async (original) => {
+  const m = await original<typeof import('../src/models/document.js')>();
+  return { ...m, findWithItems: vi.fn(m.findWithItems) };
+});
+
 // Importacao em lote: o motivo de cada falha aparece no envio, e o lote nao repete consultas por nota.
 const API_DIR = fileURLToPath(new URL('..', import.meta.url));
 const DB_FILE = fileURLToPath(new URL('../prisma/test-ingest.db', import.meta.url));
@@ -94,5 +103,59 @@ describe('consultas por lote, nao por nota', () => {
     expect((activeRules as Mock).mock.calls.length).toBeLessThanOrEqual(1);
     expect((findById as Mock).mock.calls.length).toBeLessThanOrEqual(1);
     expect(await prisma.document.count({ where: { clientId } })).toBeGreaterThanOrEqual(8);
+  });
+});
+
+describe('cada XML é lido uma vez, e a auditoria não relê a nota do banco', () => {
+  const lote = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `l${i}.xml`, xml: nota() }));
+  const contadores = async () => {
+    const { parseFiscalXml } = await import('../src/xml/nfe-parser.js');
+    const { findWithItems } = await import('../src/models/document.js');
+    (parseFiscalXml as Mock).mockClear();
+    (findWithItems as Mock).mockClear();
+    return { leituras: () => (parseFiscalXml as Mock).mock.calls.length, releituras: () => (findWithItems as Mock).mock.calls.length };
+  };
+
+  it('com cliente escolhido: 1 leitura por arquivo e nenhuma releitura da nota (antes: 3 leituras e 1 releitura por nota)', async () => {
+    const c = await contadores();
+    const u = await upload(lote(6));
+    expect(u.okCount + u.errorCount).toBe(6);
+    expect(c.leituras()).toBe(6);
+    expect(c.releituras()).toBe(0);
+  });
+
+  it('com detecção automática: lê 2 vezes (conta CNPJs, depois grava), sem guardar as leituras na memória', async () => {
+    const c = await contadores();
+    const up = await prisma.upload.create({ data: { officeId, clientId: null, fileName: 'auto.zip', kind: 'ZIP' } });
+    await processUpload(up.id, lote(4));
+    const u = await prisma.upload.findUniqueOrThrow({ where: { id: up.id } });
+    expect(u.okCount + u.errorCount).toBe(4);
+    expect(c.leituras()).toBe(8);
+    expect(c.releituras()).toBe(0);
+  });
+
+  it('o resultado é o mesmo de sempre: notas auditadas, com situação, veredito e achados ligados ao item', async () => {
+    const ruim = buildNfe({
+      uf: '41', issuedAt: new Date('2026-10-20T10:00:00-03:00'), number: n++, natOp: 'REMESSA',
+      emitter: { cnpj: FORN, name: 'Fornecedor', ...MGA, crt: '3' }, recipient: { cnpj: EMPRESA, name: 'Empresa', ...MGA },
+      items: [{ ...item, cfop: '5949', icms: { table: 'CST', code: '41' }, ibscbs: { cst: '410', cClassTrib: '000001' } }],
+    });
+    const u = await upload([{ name: 'ruim.xml', xml: ruim.xml }]);
+    expect(u.errorCount).toBe(1);
+    const doc = await prisma.document.findFirstOrThrow({ where: { key: ruim.key }, include: { findings: true, items: true } });
+    expect(doc.status).toBe('erro');
+    expect(doc.verdict).toBe('credito_em_risco');
+    expect(doc.auditedAt).not.toBeNull();
+    const achado = doc.findings.find((f) => f.ruleCode === 'cfop-cclasstrib-remessa')!;
+    expect(achado.severity).toBe('erro');
+    expect(achado.itemId).toBe(doc.items[0]!.id); // o achado aponta para o item certo
+  });
+
+  it('reimportar a mesma nota atualiza (não duplica) e reaudita', async () => {
+    const xml = nota();
+    await upload([{ name: 'a.xml', xml }]);
+    const antes = await prisma.document.count({ where: { clientId } });
+    await upload([{ name: 'a.xml', xml }]);
+    expect(await prisma.document.count({ where: { clientId } })).toBe(antes);
   });
 });

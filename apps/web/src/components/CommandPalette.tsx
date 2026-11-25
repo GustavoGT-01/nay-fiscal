@@ -40,7 +40,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   return (
     <>
       <div className={'scrim2' + (open ? ' on' : '')} onClick={onClose} />
-      <div className={'cmdk' + (open ? ' on' : '')} role="dialog" aria-label="Buscar" aria-hidden={!open}>
+      <div className={'cmdk' + (open ? ' on' : '')} role="dialog" aria-label="Buscar" inert={!open}>
         <div className="in">
           <i className="ti ti-search" style={{ color: 'var(--muted)' }} />
           <input

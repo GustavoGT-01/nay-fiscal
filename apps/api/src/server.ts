@@ -1,7 +1,9 @@
 try { process.loadEnvFile(); } catch { /* sem .env: usa padroes de desenvolvimento */ }
 import { buildApp } from './app.js';
 import { env } from './config/env.js';
-import { prisma } from './config/db.js';
+import { prisma, tuneSqlite } from './config/db.js';
+
+await tuneSqlite().catch(() => {}); // modo WAL: as telas nao esperam a importacao gravar
 
 // tarefas que estavam rodando quando a API caiu nao voltam sozinhas: marca como erro.
 // A instancia do tunel (SERVE_WEB) divide o banco com a do iniciar.bat e nao mexe nas tarefas dela.

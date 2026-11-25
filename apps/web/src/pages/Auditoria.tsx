@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, download } from '../lib/api';
 import { useSession } from '../lib/session';
-import { Seg, SEV_LABEL, sevClass, StatusTag, useToast } from '../lib/ui';
+import { QueryError, Seg, SEV_LABEL, sevClass, StatusTag, useToast } from '../lib/ui';
 import { useOpenNote } from '../components/note-drawer';
 import { DirectionSeg, useDirection } from '../lib/direction';
 import { useAudit, type AuditMode as Mode } from '../hooks/useAudit';
@@ -15,7 +15,7 @@ function monthRange(offset: number) {
   const f = (x: Date) => x.toISOString().slice(0, 10);
   return { from: f(a), to: f(b), label: a.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) };
 }
-const PERIODS = [{ key: 'all', label: 'Período: todas', from: '', to: '' }, ...[0, 1, 2].map((o) => { const r = monthRange(o); return { key: 'm' + o, label: r.label[0].toUpperCase() + r.label.slice(1), from: r.from, to: r.to }; })];
+const PERIODS = [{ key: 'all', label: 'Período: todas', from: '', to: '' }, ...[0, 1, 2].map((o) => { const r = monthRange(o); return { key: 'm' + o, label: r.label.charAt(0).toUpperCase() + r.label.slice(1), from: r.from, to: r.to }; })];
 
 export function Auditoria() {
   const { client, can } = useSession();
@@ -62,15 +62,16 @@ export function Auditoria() {
 
   const exportAs = async (format: 'xlsx' | 'csv') => {
     try {
-      await download(`/api/audit/export?${qs}&format=${format}`, `auditoria-${client!.cnpj}.${format}`);
-      toast(format === 'xlsx' ? 'Planilha da auditoria exportada' : 'CSV da auditoria exportado', 'ti-download');
+      const { truncatedAt } = await download(`/api/audit/export?${qs}&format=${format}`, `auditoria-${client!.cnpj}.${format}`);
+      if (truncatedAt) toast(`Relatório incompleto: só as ${truncatedAt.toLocaleString('pt-BR')} linhas mais recentes. Filtre por período para ver o restante.`, 'ti-alert-triangle');
+      else toast(format === 'xlsx' ? 'Planilha da auditoria exportada' : 'CSV da auditoria exportado', 'ti-download');
     } catch (e) {
       toast((e as Error).message, 'ti-alert-triangle');
     }
   };
   const [expOpen, setExpOpen] = useState(false);
 
-  const toggle = (code: string) => setOpen((s) => { const x = new Set(s); x.has(code) ? x.delete(code) : x.add(code); return x; });
+  const toggle = (code: string) => setOpen((s) => { const x = new Set(s); if (x.has(code)) x.delete(code); else x.add(code); return x; });
 
   return (
     <section className="view on" aria-labelledby="h-aud">
@@ -102,6 +103,7 @@ export function Auditoria() {
       {mode === 'regra' && (
         <div>
           {rules.isLoading && <div className="skel" style={{ height: 240 }} />}
+          {rules.isError && <QueryError error={rules.error} onRetry={() => rules.refetch()} what="os achados" />}
           {rules.data?.length === 0 && <div className="panel"><p className="hint">Nenhum achado neste período. As notas estão em conformidade.</p></div>}
           {rules.data?.map((r) => {
             const isOpen = open.has(r.code);
@@ -133,7 +135,7 @@ export function Auditoria() {
 
       {mode === 'nota' && (
         <div className="table-wrap">
-          {notes.isLoading ? <div className="skel" style={{ height: 240, margin: 16 }} /> : (
+          {notes.isLoading ? <div className="skel" style={{ height: 240, margin: 16 }} /> : notes.isError ? <QueryError error={notes.error} onRetry={() => notes.refetch()} what="as notas" /> : (
             <table className="table">
               <thead><tr><th>Nota</th><th>{direction === 'saida' ? 'Cliente' : direction === 'all' ? 'Fornecedor ou cliente' : 'Fornecedor'}</th><th>Achados</th><th>Situação</th></tr></thead>
               <tbody>
@@ -154,6 +156,7 @@ export function Auditoria() {
       {mode === 'forn' && (
         <div className="groups">
           {sups.isLoading && <div className="skel" style={{ height: 120 }} />}
+          {sups.isError && <QueryError error={sups.error} onRetry={() => sups.refetch()} what="os fornecedores" />}
           {sups.data?.map((s) => {
             const o = s.notes - s.withError - s.withAttention;
             return (

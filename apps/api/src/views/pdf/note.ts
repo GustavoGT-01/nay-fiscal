@@ -21,7 +21,6 @@ export function renderNoteHtml({ doc: d, checks }: Loaded, now = new Date()) {
     : nErr ? 'Corrija os erros antes de escriturar.' : nAtt ? 'Sem erros. Vale revisar os pontos de atenção.' : 'Nota pronta para escriturar.';
   const sumCls = d.cancelled ? 'muted' : nErr ? 'erro' : nAtt ? 'atencao' : 'ok';
 
-  const emitter = { name: d.emitterName, cnpj: d.emitterCnpj, street: d.emitterStreet, number: d.emitterNumber, complement: d.emitterComplement, district: d.emitterDistrict, cep: d.emitterCep, city: d.emitterCity, uf: d.emitterUf, ie: d.emitterIe };
   const recipient = { name: d.recipientName, cnpj: d.recipientCnpj, street: d.recipientStreet, number: d.recipientNumber, complement: d.recipientComplement, district: d.recipientDistrict, cep: d.recipientCep, city: d.recipientCity, uf: d.recipientUf, ie: d.recipientIe };
   const emitAddr = [[d.emitterStreet, d.emitterNumber].filter(Boolean).join(', '), d.emitterComplement, d.emitterDistrict].filter(Boolean).join(' - ');
   const emitCity = [d.emitterCity && `${d.emitterCity}/${d.emitterUf}`, d.emitterCep && `CEP ${fmtCep(d.emitterCep)}`].filter(Boolean).join(' · ');
@@ -48,11 +47,8 @@ export function renderNoteHtml({ doc: d, checks }: Loaded, now = new Date()) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; font-src 'self'; img-src data:; base-uri 'none'; form-action 'none'">
 <title>${esc(`${docLabel} ${d.number} - Nay Fiscal`)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 ${NOTE_CSS}
 </style>

@@ -4,7 +4,7 @@ import { presentFinding } from './present.js';
 import { actionLabel } from './filters.js';
 import type * as findingModel from '../models/finding.js';
 
-type ExportFinding = Awaited<ReturnType<typeof findingModel.listForExport>>[number];
+type ExportFinding = Awaited<ReturnType<typeof findingModel.listForExport>>['rows'][number];
 
 export const EXPORT_HEADER = ['Nota', 'Série', 'Emissão', 'Emitente', 'CNPJ emitente', 'Item', 'CFOP', 'Regra', 'Severidade', 'Está no XML', 'Deveria ser', 'Como corrigir', 'Base legal', 'Chave', 'Direção', 'O que fazer'];
 
@@ -32,11 +32,15 @@ export function toCsv(rows: unknown[][]) {
   return '﻿' + [EXPORT_HEADER, ...rows].map((r) => r.map(esc).join(';')).join('\r\n');
 }
 
-export async function toXlsx(client: { name: string; cnpj: string }, rows: unknown[][]) {
+/** `truncatedAt`: o relatorio foi cortado nesse numero de linhas (ha mais achados do que cabe num arquivo). */
+export async function toXlsx(client: { name: string; cnpj: string }, rows: unknown[][], truncatedAt?: number) {
   const wb = new ExcelJS.Workbook();
   const sum = wb.addWorksheet('Resumo');
   sum.addRow(['Nay Fiscal — Relatório de auditoria']).font = { bold: true, size: 14 };
   sum.addRow([client.name, client.cnpj]);
+  if (truncatedAt) {
+    sum.addRow([`ATENÇÃO: relatório incompleto. Só as ${truncatedAt.toLocaleString('pt-BR')} linhas mais recentes foram exportadas; filtre por período ou direção para ver o restante.`]).font = { bold: true, color: { argb: 'FFC0392B' } };
+  }
   sum.addRow([]);
   sum.addRow(['Regra', 'Achados']).font = { bold: true };
   const byRule = new Map<string, number>();

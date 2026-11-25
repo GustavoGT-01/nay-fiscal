@@ -1,12 +1,13 @@
 import { StrictMode, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@tabler/icons-webfont/dist/tabler-icons.min.css';
+import './styles/fonts.css';
 import './styles/base.css';
 import './styles/shell.css';
 import './styles/common.css';
-import './styles/inicio.css';
+
 import './styles/importar.css';
 import './styles/notas.css';
 import './styles/auditoria.css';
@@ -60,7 +61,7 @@ function App() {
           <Route path="creditos" element={<Guard perm="creditos"><EmBreve k="creditos" /></Guard>} />
           <Route path="ajuda" element={<Guard perm="ajuda"><EmBreve k="ajuda" /></Guard>} />
           <Route path="gestao" element={<Guard perm="gestao"><Gestao /></Guard>} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<section className="view on"><EmptyState icon="ti-map-off" title="Página não encontrada" text="O endereço não existe ou foi movido. Volte ao início e escolha a tela pelo menu." action={<Link className="btn primary" to="/">Voltar ao início</Link>} /></section>} />
         </Route>
       </Routes>
     </NoteDrawerProvider>

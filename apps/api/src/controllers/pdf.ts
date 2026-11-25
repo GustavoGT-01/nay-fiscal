@@ -1,10 +1,11 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { IdParam } from '../lib/query.js';
 import { loadNote } from '../services/note.js';
 import { renderNoteHtml } from '../views/pdf/note.js';
 
 /** Nota em HTML A4 com o diagnostico, pronta para imprimir ou salvar em PDF. */
 export async function noteHtml(req: FastifyRequest, reply: FastifyReply) {
-  const { id } = req.params as { id: string };
+  const { id } = IdParam.parse(req.params);
   const loaded = await loadNote(id, req.me.officeId);
   if (!loaded) return reply.code(404).send({ message: 'Nota não encontrada.' });
   return reply

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import { REFORMA, type DashboardDTO, type DirectionFilter } from '@nay/shared';
 import { useSession } from '../lib/session';
-import { EmptyState } from '../lib/ui';
+import { EmptyState, QueryError } from '../lib/ui';
 import { useOpenNote } from '../components/note-drawer';
 import { useDashboard } from '../hooks/useDashboard';
 import { useDirection } from '../lib/direction';
@@ -30,7 +30,7 @@ function lastDays(barcode: DashboardDTO['barcode']): Day[] {
   const days: Day[] = Array.from({ length: 14 }, (_, i) => {
     const date = new Date(end);
     date.setDate(end.getDate() - (13 - i));
-    return { date, label: fmtDay(date), wk: WK[date.getDay()], weekend: date.getDay() === 0 || date.getDay() === 6, ok: 0, err: 0, canc: 0, firstErr: null, first: null };
+    return { date, label: fmtDay(date), wk: WK[date.getDay()] ?? '', weekend: date.getDay() === 0 || date.getDay() === 6, ok: 0, err: 0, canc: 0, firstErr: null, first: null };
   });
   const byKey = new Map(days.map((d) => [dayKey(d.date), d]));
   for (const b of barcode) {
@@ -165,7 +165,7 @@ export function Inicio() {
           </div>
 
           {!d ? (
-            <div className="skel" style={{ height: 250 }} />
+            q.isError ? <QueryError error={q.error} onRetry={() => q.refetch()} what="o painel" /> : <div className="skel" style={{ height: 250 }} />
           ) : total === 0 ? (
             <EmptyState icon="ti-chart-donut" title="Nenhuma nota ainda" text="Importe os XMLs do cliente para ver a saúde da carteira." action={<Link className="btn primary" to="/importar">Importar notas</Link>} />
           ) : (

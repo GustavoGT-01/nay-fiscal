@@ -64,6 +64,16 @@ Depois dê dois cliques em `tunnel.bat`. Ele garante um segredo de sessão próp
 
 O túnel rápido não tem garantia de disponibilidade; para endereço fixo, use um túnel nomeado da Cloudflare (precisa de conta e `cloudflared tunnel login`).
 
+## Desempenho
+
+Para medir com um banco grande e descartável (gera as notas, cronometra as telas pesadas e importa um ZIP pelo caminho real; nunca toca no seu `dev.db`):
+
+```bash
+npm run bench -w @nay/api -- 20000 1000
+```
+
+O servidor liga o modo WAL do SQLite ao subir, para as telas não esperarem a importação gravar. O WAL cria os arquivos `.db-wal` e `.db-shm` ao lado do banco: para copiar o banco como backup, feche o app antes. `SQLITE_WAL=0` no `.env` desliga.
+
 ## Segurança
 
 - Sessão: o token de acesso (15 min) fica só na memória da aba; o de renovação (7 dias) fica num cookie `httpOnly`, `SameSite=Strict`, restrito a `/api/auth`. Trocar a senha (`npm run senha`) derruba todas as sessões abertas; `POST /api/auth/logout-all` faz o mesmo para o próprio usuário.
@@ -86,11 +96,23 @@ apps/web      React + Vite, estilos portados do mockup
 packages/shared  tipos, telas/permissões e cálculo do simulador do Simples
 ```
 
-## Testes
+## Testes e qualidade
 
 ```bash
 npm test
 ```
+
+Roda a API, o front e o pacote `shared` (Vitest). Para conferir tipos e lint:
+
+```bash
+npm run typecheck
+```
+
+```bash
+npm run lint
+```
+
+O mesmo conjunto (tipos, lint, testes e build do front) roda no GitHub Actions em cada push e pull request, em Linux e Windows (`.github/workflows/ci.yml`).
 
 ## O que já funciona
 

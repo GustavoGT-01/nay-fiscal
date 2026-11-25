@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { ApiError } from './api';
 
 /* ---------- Toasts ---------- */
 interface ToastItem { id: number; msg: string; icon: string; out?: boolean }
@@ -109,6 +110,21 @@ export function EmptyState({ icon, title, text, action }: { icon: string; title:
       <h2>{title}</h2>
       <p>{text}</p>
       {action}
+    </div>
+  );
+}
+
+/**
+ * Falha ao carregar uma consulta: diz o que nao carregou e deixa tentar de novo.
+ * Sem isso a tela fica num carregamento eterno, ou mostra "vazio" como se nao houvesse dados.
+ */
+export function QueryError({ error, onRetry, what = 'os dados' }: { error: unknown; onRetry: () => void; what?: string }) {
+  // so mostra a mensagem do servidor (ja em portugues); erro de rede chega em ingles e vira texto fixo
+  const detail = error instanceof ApiError && error.message ? error.message : 'Verifique a conexão e tente de novo.';
+  return (
+    <div className="err-box row" role="alert">
+      <span><b>Não foi possível carregar {what}.</b> {detail}</span>
+      <button type="button" className="btn" onClick={onRetry}><i className="ti ti-refresh" />Tentar de novo</button>
     </div>
   );
 }

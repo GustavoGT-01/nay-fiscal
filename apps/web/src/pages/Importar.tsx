@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { UploadDTO } from '@nay/shared';
 import { api, fmtCnpj } from '../lib/api';
 import { useSession } from '../lib/session';
-import { useToast } from '../lib/ui';
+import { QueryError, useToast } from '../lib/ui';
 import { useUploads } from '../hooks/useUploads';
 
 function Job({ u }: { u: UploadDTO }) {
@@ -124,6 +124,7 @@ export function Importar() {
             <button className="btn" onClick={() => uploads.refetch()}><i className="ti ti-refresh" />Atualizar</button>
           </div>
           <div className="queue">
+            {uploads.isError && <QueryError error={uploads.error} onRetry={() => uploads.refetch()} what="a fila de importação" />}
             {uploads.data?.map((u) => <Job key={u.id} u={u} />)}
             {uploads.data?.length === 0 && <p className="hint">Nenhum envio ainda. Os arquivos que você mandar aparecem aqui com o progresso.</p>}
           </div>

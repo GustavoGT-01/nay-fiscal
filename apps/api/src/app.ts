@@ -35,8 +35,8 @@ export async function buildApp() {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-        fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        fontSrc: ["'self'", 'data:'], // fontes do app sao locais (apps/web/public/fonts)
         imgSrc: ["'self'", 'data:'],
         connectSrc: ["'self'"],
         frameSrc: ["'self'"],

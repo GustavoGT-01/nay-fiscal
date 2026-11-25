@@ -8,7 +8,7 @@ const SOON: Record<string, [string, string, string, string, string]> = {
 
 export function EmBreve({ k }: { k: keyof typeof SOON }) {
   const nav = useNavigate();
-  const [icon, title, text, cta, to] = SOON[k];
+  const [icon, title, text, cta, to] = SOON[k]!;
   return (
     <section className="view on">
       <EmptyState icon={icon} title={title} text={text} action={<button className="btn primary" onClick={() => nav(to)}>{cta}</button>} />
