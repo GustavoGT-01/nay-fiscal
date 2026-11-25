@@ -1,5 +1,6 @@
 import type { NfseData } from '../../xml/nfse-parser.js';
 import type { Loaded } from './types.js';
+import { safeJson } from '../../lib/json.js';
 import { box, brl, dec, esc, fmtDate, fmtDoc, fmtTime } from './format.js';
 import { party } from './blocks.js';
 
@@ -9,7 +10,7 @@ const OPC_SN: Record<string, string> = { '1': 'Não optante', '2': 'MEI', '3': '
 
 /** Bloco da NFS-e (prestador, tomador, servico, ISS e retencoes) no lugar do DANFE. */
 export function nfseSection(d: Loaded['doc'], tomador: Parameters<typeof party>[1]) {
-  const s = JSON.parse(d.nfse ?? '{}') as NfseData;
+  const s = safeJson<NfseData>(d.nfse, {} as NfseData);
   const prestAddr = [[d.emitterStreet, d.emitterNumber].filter(Boolean).join(', '), d.emitterDistrict, d.emitterCity && `${d.emitterCity}/${d.emitterUf}`].filter(Boolean).join(' - ');
   const pct = (v: number) => `${(v ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`;
   return `<section>

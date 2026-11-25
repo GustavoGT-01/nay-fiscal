@@ -3,7 +3,7 @@
  * <NFSe><infNFSe> ... dados gerados pela Sefin ... <DPS><infDPS> ... declaracao do prestador.
  * As tags sao procuradas por nome dentro de cada grupo, para tolerar pequenas variacoes de leiaute.
  */
-import type { ParsedDocument } from './nfe-parser.js';
+import { optDate, reqDate, type ParsedDocument } from './nfe-parser.js';
 
 /** Dados proprios da NFS-e, guardados em Document.nfse (JSON). */
 export interface NfseData {
@@ -140,7 +140,7 @@ export function parseNfse(doc: Obj, xml: string): ParsedDocument {
     number: str(inf.nNFSe),
     series: str(dps.serie),
     tpNF: '1',
-    issuedAt: new Date(str(dps.dhEmi) || str(inf.dhProc)),
+    issuedAt: reqDate(str(dps.dhEmi) || str(inf.dhProc), 'Data de emissão (dhEmi)'),
     exitAt: null,
     natOp: str(inf.xTribNac) || 'Prestação de serviço',
     emitter: { ...emit, crt: data.simplesOption === '3' || data.simplesOption === '2' ? '1' : data.simplesOption === '1' ? '3' : null },
@@ -150,7 +150,7 @@ export function parseNfse(doc: Obj, xml: string): ParsedDocument {
     vFrete: 0, vSeg: 0, vDesc: discounts, vOutro: 0, vIpi: 0,
     modFrete: null,
     additionalInfo: str(find(dps, 'xInfComp')),
-    protocolAt: inf.dhProc ? new Date(str(inf.dhProc)) : null,
+    protocolAt: optDate(inf.dhProc),
     vBc: issBase,
     vIcms: 0,
     vPis: retPis,

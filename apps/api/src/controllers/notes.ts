@@ -4,6 +4,7 @@ import type { NfseDetailDTO, NoteDetailDTO, NoteRowDTO, NoteStatus, Severity, Ve
 import { ownClient } from '../middleware/auth.js';
 import * as documents from '../models/document.js';
 import { ruleMap } from '../models/rule.js';
+import { safeJson } from '../lib/json.js';
 import { CCE_EXPLICACAO } from '../engine/actions.js';
 import { SEV_ORDER, counterpart, directionWhere, periodWhere, serviceSummary } from '../services/filters.js';
 import { loadNote } from '../services/note.js';
@@ -63,7 +64,7 @@ export async function getNote(req: FastifyRequest, reply: FastifyReply): Promise
     taxes: { vBc: d.vBc, vIcms: d.vIcms, vPis: d.vPis, vCofins: d.vCofins, vIbs: d.vIbs, vCbs: d.vCbs },
     checks: compact,
     service: serviceSummary(d.nfse),
-    nfse: d.nfse ? (JSON.parse(d.nfse) as NfseDetailDTO) : null,
+    nfse: safeJson<NfseDetailDTO | null>(d.nfse, null),
     supplierMessage: supplierMessage(d, compact, CCE_EXPLICACAO),
     cceNote: compact.some((c) => c.severity === 'erro' && c.action === 'cancelar_reemitir') ? CCE_EXPLICACAO : null,
   };

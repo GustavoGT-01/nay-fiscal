@@ -2,20 +2,29 @@ import { parseFiscalXml } from '../../xml/nfe-parser.js';
 import * as clients from '../../models/client.js';
 import * as documents from '../../models/document.js';
 import { auditStoredDocument } from '../audit.js';
+import type { RuleSeed } from '../../engine/catalog.js';
+import type { ClientContext } from '../../engine/evaluator.js';
 
 type IngestOutcome = 'novo' | 'atualizado' | 'cancelamento' | 'ignorado';
 
+/** Dados ja carregados pelo chamador de um lote, para nao repetir consultas a cada nota. */
+export interface IngestShared {
+  rules?: RuleSeed[];
+  client?: Awaited<ReturnType<typeof clients.findById>>;
+}
+
 /** Le um XML, grava (ou atualiza) o documento e audita. */
-export async function ingestXml(clientId: string, xml: string, uploadId?: string): Promise<{ outcome: IngestOutcome; status?: string }> {
-  const client = await clients.findById(clientId);
+export async function ingestXml(clientId: string, xml: string, uploadId?: string, shared: IngestShared = {}): Promise<{ outcome: IngestOutcome; status?: string }> {
+  const client = shared.client ?? (await clients.findById(clientId));
   const root = client.cnpj.slice(0, 8);
+  const ctx: ClientContext = { cnpjRoot: root, cityCode: client.cityCode, city: client.city };
   const parsed = parseFiscalXml(xml);
 
   if (parsed.kind === 'cancelamento') {
     const doc = await documents.findByKey(clientId, parsed.key);
     if (!doc) return { outcome: 'ignorado' };
     await documents.markCancelled(doc.id);
-    const status = await auditStoredDocument(doc.id);
+    const status = await auditStoredDocument(doc.id, shared.rules, ctx);
     return { outcome: 'cancelamento', status };
   }
 
@@ -88,6 +97,6 @@ export async function ingestXml(clientId: string, xml: string, uploadId?: string
     if (!existing) throw err;
     doc = await documents.saveWithItems(existing.id, data, parsed.items);
   }
-  const status = await auditStoredDocument(doc.id);
+  const status = await auditStoredDocument(doc.id, shared.rules, ctx);
   return { outcome: existing ? 'atualizado' : 'novo', status };
 }

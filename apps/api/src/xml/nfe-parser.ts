@@ -93,7 +93,18 @@ const num = (v: unknown) => (v === undefined || v === null || v === '' ? 0 : Num
 const str = (v: unknown) => (v === undefined || v === null ? '' : String(v));
 const opt = (v: unknown) => (v === undefined || v === null || v === '' ? null : String(v));
 
-const optDate = (v: unknown) => (v ? new Date(String(v)) : null);
+export const optDate = (v: unknown) => {
+  if (!v) return null;
+  const d = new Date(String(v));
+  return Number.isNaN(d.getTime()) ? null : d; // data ilegivel vira "sem data", nao Invalid Date no banco
+};
+
+/** Data obrigatoria (emissao): sem ela a nota nao entra, e o motivo aparece no envio. */
+export function reqDate(v: unknown, campo: string) {
+  const d = new Date(String(v ?? ''));
+  if (Number.isNaN(d.getTime())) throw new Error(`${campo} ausente ou inválida no XML`);
+  return d;
+}
 
 /** Endereco (enderEmit/enderDest) + IE. */
 function address(ender: any, ie: unknown): ParsedAddress {
@@ -199,7 +210,7 @@ export function parseFiscalXml(xml: string): ParseResult {
     number: str(ide.nNF),
     series: str(ide.serie),
     tpNF: str(ide.tpNF) === '0' ? '0' : '1',
-    issuedAt: new Date(str(ide.dhEmi || ide.dEmi)),
+    issuedAt: reqDate(str(ide.dhEmi || ide.dEmi), 'Data de emissão (dhEmi)'),
     exitAt: optDate(ide.dhSaiEnt || ide.dSaiEnt),
     natOp: str(ide.natOp),
     emitter: {
@@ -258,7 +269,7 @@ function parseCte(doc: any, xml: string): ParsedDocument {
     number: str(ide.nCT),
     series: str(ide.serie),
     tpNF: '1',
-    issuedAt: new Date(str(ide.dhEmi)),
+    issuedAt: reqDate(str(ide.dhEmi), 'Data de emissão (dhEmi)'),
     exitAt: null,
     natOp: str(ide.natOp),
     emitter: {

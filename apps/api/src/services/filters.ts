@@ -1,12 +1,13 @@
 import type { NoteRowDTO } from '@nay/shared';
 import type { NfseData } from '../xml/nfse-parser.js';
+import { safeJson } from '../lib/json.js';
 
 export const SEV_ORDER: Record<string, number> = { erro: 0, atencao: 1, a_verificar: 2, ok: 3 };
 
 /** Resumo de servico para a linha da lista (so NFS-e). */
 export function serviceSummary(json: string | null): NoteRowDTO['service'] {
-  if (!json) return null;
-  const n = JSON.parse(json) as NfseData;
+  const n = safeJson<NfseData | null>(json, null);
+  if (!n) return null;
   return { code: n.serviceCode, description: n.description, issRate: n.issRate, issValue: n.issValue, retained: n.issRetention === '2' || n.issRetention === '3', competence: n.competence };
 }
 

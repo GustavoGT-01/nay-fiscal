@@ -12,7 +12,7 @@ export const EXPORT_HEADER = ['Nota', 'Série', 'Emissão', 'Emitente', 'CNPJ em
 export function exportRows(findings: ExportFinding[], rules: Map<string, Rule>) {
   return findings.map((f) => {
     const p = presentFinding(f, rules.get(f.ruleCode), f.item, f.document);
-    return [f.document.number, f.document.series, f.document.issuedAt.toLocaleDateString('pt-BR'), f.document.emitterName, f.document.emitterCnpj, f.item?.n ?? '', f.item?.cfop ?? '', p.title, p.severity, p.observed, p.expected, p.how ?? '', p.legalBasis ?? '', f.document.key, f.document.direction === 'saida' ? 'Saída' : 'Entrada', actionLabel(f.document.direction, p.action, p.severity)];
+    return [f.document.number, f.document.series, f.document.issuedAt.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }), f.document.emitterName, f.document.emitterCnpj, f.item?.n ?? '', f.item?.cfop ?? '', p.title, p.severity, p.observed, p.expected, p.how ?? '', p.legalBasis ?? '', f.document.key, f.document.direction === 'saida' ? 'Saída' : 'Entrada', actionLabel(f.document.direction, p.action, p.severity)];
   });
 }
 

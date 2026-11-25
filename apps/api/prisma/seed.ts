@@ -179,7 +179,7 @@ async function main() {
   const profile = await prisma.profile.create({
     data: { officeId: office.id, name: 'Analista fiscal', permissions: JSON.stringify(['inicio', 'importar', 'clientes', 'notas', 'auditoria', 'auditoria.rodar', 'clientes.gerenciar', 'nfse', 'simulador', 'creditos', 'ia', 'ajuda']) },
   });
-  const hash = await bcrypt.hash('nay12345', 10);
+  const hash = await bcrypt.hash('nay12345', 12); // mesmo custo de senha.ts
   await prisma.user.create({ data: { name: 'Administrador', email: 'admin@nayfiscal.dev', passwordHash: hash, role: 'ADMIN', officeId: office.id } });
   await prisma.user.create({ data: { name: 'Nayara', email: 'analista@nayfiscal.dev', passwordHash: hash, role: 'ANALISTA', officeId: office.id, profileId: profile.id } });
 

@@ -11,16 +11,30 @@ import { ingestXml } from './ingest-xml.js';
  * - Sem cliente (detectar): usa o cliente cadastrado que aparece na nota; se nenhum aparece,
  *   cria o cliente com a empresa que mais se repete no lote (a empresa dona das notas).
  */
+/** Primeira linha do erro, curta: mensagens do Prisma carregam o comando inteiro, com dados da nota. */
+export function failureReason(e: unknown) {
+  const msg = e instanceof Error ? e.message : String(e);
+  const code = (e as { code?: string })?.code;
+  const line = (msg.split('\n').map((l) => l.trim()).filter(Boolean).pop() ?? 'erro desconhecido').slice(0, 140);
+  return code ? `${code}: ${line}` : line;
+}
+
 export async function processUpload(uploadId: string, files: { name: string; xml: string }[]) {
-  await activeRules(); // aquece
+  const rules = await activeRules(); // uma vez por lote, nao por nota
   const up = await uploads.update(uploadId, { total: files.length });
   const resolver = new ClientResolver(up.officeId);
   await resolver.load();
   const fixed = up.clientId ? await clients.findByIdOrNull(up.clientId) : null;
 
   // le tudo antes, para contar quais CNPJs mais aparecem no lote
+  const failures: string[] = []; // "arquivo — motivo", so os 3 primeiros vao para a mensagem do envio
+  const fail = (name: string, e: unknown) => {
+    const reason = failureReason(e);
+    console.warn(JSON.stringify({ msg: 'arquivo nao importado', uploadId, file: name, reason }));
+    if (failures.length < 3) failures.push(`${name} — ${reason}`);
+  };
   const parsed = files.map((f) => {
-    try { return { f, p: parseFiscalXml(f.xml) }; } catch { return { f, p: null }; }
+    try { return { f, p: parseFiscalXml(f.xml), e: null as unknown }; } catch (e) { return { f, p: null, e }; }
   });
   const freq = new Map<string, number>();
   for (const { p } of parsed) {
@@ -31,9 +45,10 @@ export async function processUpload(uploadId: string, files: { name: string; xml
   let processed = 0, ok = 0, err = 0, failed = 0, skipped = 0;
   const notMine: string[] = [];
   const usedClients = new Map<string, number>();
-  for (const { f, p } of parsed) {
+  const clientCache = new Map<string, Awaited<ReturnType<typeof clients.findById>>>();
+  for (const { f, p, e } of parsed) {
     try {
-      if (!p) { failed++; continue; }
+      if (!p) { failed++; fail(f.name, e); continue; }
       let clientId: string | undefined;
       if (p.kind === 'cancelamento') {
         const doc = await documents.findOwnerByKey(p.key, up.officeId);
@@ -58,12 +73,15 @@ export async function processUpload(uploadId: string, files: { name: string; xml
           clientId = (await resolver.create(party, party === p.emitter ? p.emitter.crt : null)).id;
         }
       }
-      const r = await ingestXml(clientId, f.xml, uploadId);
+      let client = clientCache.get(clientId);
+      if (!client) { client = await clients.findById(clientId); clientCache.set(clientId, client); }
+      const r = await ingestXml(clientId, f.xml, uploadId, { rules, client });
       usedClients.set(clientId, (usedClients.get(clientId) ?? 0) + 1);
       if (r.status === 'erro') err++;
       else if (r.status) ok++;
-    } catch {
+    } catch (e) {
       failed++;
+      fail(f.name, e);
     } finally {
       processed++;
       if (processed % 5 === 0 || processed === files.length) {
@@ -73,7 +91,7 @@ export async function processUpload(uploadId: string, files: { name: string; xml
   }
 
   const msgs: string[] = [];
-  if (failed) msgs.push(`${failed} arquivo(s) não reconhecido(s)`);
+  if (failed) msgs.push(`${failed} arquivo(s) não importado(s)${failures.length ? ` (${failures.join('; ')})` : ''}`);
   if (skipped && fixed) msgs.push(`${skipped} nota(s) não são de ${fixed.name}${notMine.length ? ` (ex.: ${notMine.join(', ')})` : ''}`);
   else if (skipped) msgs.push(`${skipped} nota(s) sem cliente identificado: cadastre o cliente ou escolha-o antes de importar`);
   const mainClient = fixed?.id ?? [...usedClients].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
