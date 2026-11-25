@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { REFORMA, type DashboardDTO, type DirectionFilter } from '@nay/shared';
+import { dataBR, inicioDoDia, REFORMA, type DashboardDTO, type DirectionFilter } from '@nay/shared';
 import { useSession } from '../lib/session';
 import { EmptyState, QueryError } from '../lib/ui';
 import { useOpenNote } from '../components/note-drawer';
@@ -91,7 +91,7 @@ export function Inicio() {
 
   const h = new Date().getHours();
   const greet = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
-  const since = Math.max(0, Math.floor((Date.now() - new Date(REFORMA.grupoObrigatorioDesde + 'T00:00:00-03:00').getTime()) / 864e5));
+  const since = Math.max(0, Math.floor((Date.now() - inicioDoDia(REFORMA.grupoObrigatorioDesde).getTime()) / 864e5));
   const need = d ? d.totals.erro + d.totals.atencao : 0;
 
   // anel
@@ -283,7 +283,7 @@ export function Inicio() {
               <div className="db-rate"><strong>0,9%</strong><span>CBS em teste</span></div>
               <div className="db-rate"><strong>0,1%</strong><span>IBS em teste</span></div>
             </div>
-            <p className="dnote">Grupo IBS/CBS obrigatório desde 03/08/2026, há {since} {since === 1 ? 'dia' : 'dias'}.</p>
+            <p className="dnote">Grupo IBS/CBS obrigatório desde {dataBR(REFORMA.grupoObrigatorioDesde)}, há {since} {since === 1 ? 'dia' : 'dias'}.</p>
           </section>
         </div>
       </div>

@@ -9,6 +9,9 @@ export const findOfOffice = (id: string, officeId: string) => prisma.client.find
 
 export const findById = (id: string) => prisma.client.findUniqueOrThrow({ where: { id } });
 
+/** Cliente com os estabelecimentos cadastrados (a importacao usa as raizes de todos para dar a direcao da nota). */
+export const findWithEstablishments = (id: string) => prisma.client.findUniqueOrThrow({ where: { id }, include: { establishments: true } });
+
 export const findByIdOrNull = (id: string) => prisma.client.findUnique({ where: { id } });
 
 /** Cliente que ja usa esta raiz de CNPJ (como matriz ou em algum estabelecimento). */

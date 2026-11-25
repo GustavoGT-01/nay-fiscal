@@ -136,3 +136,40 @@ describe('veredito', () => {
     expect(verdict('saida', nota([remessaErrada], { cStat: '101' }))).toBe('cancelada');
   });
 });
+
+describe('datas da Reforma (fonte única em shared)', () => {
+  it('o motor e a regra usam as datas de REFORMA', async () => {
+    const { REFORMA, inicioDoDia, dataBR } = await import('@nay/shared');
+    const { INICIO_REFORMA } = await import('../src/engine/types.js');
+    expect(INICIO_REFORMA.getTime()).toBe(inicioDoDia(REFORMA.inicio).getTime());
+    const regra = RULES.find((r) => r.code === 'ibscbs-obrigatorio')!;
+    expect((regra.definition as { desde: string }).desde).toBe(REFORMA.grupoObrigatorioDesde);
+    expect(regra.description).toContain(dataBR(REFORMA.grupoObrigatorioDesde));
+    expect(dataBR('2026-08-03')).toBe('03/08/2026');
+  });
+
+  it('no dia da obrigatoriedade a nota sem grupo já é erro; na véspera não', () => {
+    // o construtor de XML de teste grava o relógio UTC com sufixo -03:00; por isso as datas abaixo terminam em Z
+    expect(sev(run(nota([{ ibscbs: undefined }], { date: '2026-08-03T00:30:00Z' })), 'ibscbs-obrigatorio')).toEqual(['erro']);
+    expect(sev(run(nota([{ ibscbs: undefined }], { date: '2026-08-02T23:30:00Z' })), 'ibscbs-obrigatorio')).toEqual([]);
+  });
+});
+
+describe('regra por NCM (modo mapa_por_ncm)', () => {
+  // nenhuma regra do catalogo usa o modo ainda; este teste garante que ele funciona quando uma for cadastrada
+  const regra = {
+    ...RULES.find((r) => r.code === 'cst-cclasstrib-coerencia')!,
+    code: 'teste-ncm', field: 'cclass_trib', mode: 'mapa_por_ncm', severity: 'erro' as const,
+    definition: { mapa: { '94016100': ['000001'] } },
+  };
+  const com = (ncm: string, cClassTrib: string) => auditDocument(nota([{ ncm, ibscbs: { cst: '000', cClassTrib, valores: true } }]), [...RULES, regra], client);
+
+  it('NCM do mapa com cClassTrib fora da lista é erro; dentro da lista é ok', () => {
+    expect(sev(com('94016100', '000002'), 'teste-ncm')).toEqual(['erro']);
+    expect(sev(com('94016100', '000001'), 'teste-ncm')).toEqual(['ok']);
+  });
+
+  it('NCM que não está no mapa não gera achado', () => {
+    expect(sev(com('12345678', '000002'), 'teste-ncm')).toEqual([]);
+  });
+});

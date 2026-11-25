@@ -18,14 +18,15 @@ Levantamento feito em 11/11/2026, após a reorganização em MVC. Cada item cita
 7. ✅ **Validação de entrada.** *(resolvido em 25/11/2026: todos os parâmetros de URL passam por esquemas zod em `apps/api/src/lib/query.ts`; valor fora da lista dá 400; P2025 vira 404)* Query params usam `req.query as {...}` sem zod. Data inválida vira erro 500, `page` aceita negativo, e `findFirstOrThrow` responde 500 em vez de 404.
 8. **Performance.** ◐ *(em parte, 25/11/2026; medido com 20 mil notas por `npm run bench`)* Feito: o painel calcula os totais no banco e manda só os últimos 15 dias para o gráfico (574 para 155 ms; resposta de 3,9 MB para 143 KB); os achados por regra são contados no banco (179 para 99 ms); `ruleMap()` e as regras ativas ficam em cache (invalidado ao subir); a importação lê cada XML uma vez, grava e audita sem reler a nota do banco, e o SQLite roda em modo WAL (de 84 para 178 notas/s; com o painel aberto durante a importação, a tela responde em ~170 ms em vez de ~550 ms, pior caso de 2,3 s para 0,18 s); índices novos desde 17/11/2026. Falta: o resumo de NFS-e ainda faz `JSON.parse` de cada nota (precisa de colunas novas, com os valores em centavos, e de migração); o XML ocupa a mesma linha da nota (tabela própria); exportação em fluxo, porque o CSV de 20 mil notas leva ~1 s e ~450 MB e o XLSX segura tudo na memória; busca por texto; lista de regras sem paginação.
 9. ◐ **Testes.** *(em parte, 25/11/2026: `npm test` roda API, front e shared (150 testes); há teste de envio multipart, auditoria em segundo plano, leituras, exportação CSV/XLSX, CT-e, `present.ts`, simulador do Simples e componentes do front; CI no GitHub Actions e ESLint ativos; falta teste da contrapressão de 200 MB do envio, e o `build` da API segue `tsc --noEmit`)*
-10. **Regras fiscais.**
-    - O ISS é validado numa faixa fixa de 2% a 5% para qualquer município, sem tabela municipal.
-    - Há datas diferentes para a Reforma Tributária: `INICIO_REFORMA` (NFS-e), 03/08/2026 (IBSCBS da NF-e) e datas fixas em `Shell.tsx` e `Inicio.tsx`. Centralizar em `packages/shared`.
-    - Só lê o padrão nacional de NFS-e (ABRASF e Ginfes não são lidos); não valida assinatura nem protocolo.
-    - CT-e gera um único item "FRETE" sem IBS/CBS.
-    - A direção da nota (entrada/saída) sai só da raiz do CNPJ do emitente; incerta para CPF ou emissão de terceiros.
-    - `'410999'` fixo no código para `cfop-cclasstrib-remessa`.
-    - A regra de CSOSN do emitente foi removida na refatoração por nunca disparar; reimplementar só junto com o enriquecimento do cadastro (Simples Nacional).
+10. ◐ **Regras fiscais.** *(em parte, 25/11/2026)*
+    - ✅ Datas da Reforma numa fonte só: `REFORMA` em `packages/shared` (`inicio` e `grupoObrigatorioDesde`), usada pelo motor, pela regra `ibscbs-obrigatorio`, por `Shell.tsx` e `Inicio.tsx`.
+    - ✅ `410999` e `200022` viraram `CCLASS_REMESSA` e `CCLASS_ZFM` no catálogo; o diagnóstico não quebra mais se a regra de remessa estiver desativada; a referência a um documento que não existe saiu do catálogo.
+    - ◐ ISS: acima de 5% é sempre erro; abaixo de 2% passa a ser "a verificar" (exceções: itens 7.02, 7.05 e 16.01 e ME/EPP). Há a estrutura para a tabela por município (`iss-municipal.ts`, com fonte e vigência), mas **está vazia**: preencher exige a lei de cada município, e não inventei alíquotas. Com o município cadastrado, fora da faixa vira erro.
+    - ◐ CT-e: continua um item "FRETE" (o CT-e tem um só serviço), mas agora lê alíquotas e valores de IBS/CBS do grupo IBSCBS e os soma no documento. Não conferi contra um CT-e real com IBS/CBS: os nomes das tags seguem o grupo da NF-e.
+    - ✅ Direção da nota: emitente CPF nunca é o cliente, emissão própria de entrada (tpNF 0) é entrada, e as raízes dos estabelecimentos cadastrados do cliente contam (não só a raiz do CNPJ principal).
+    - ◐ Regra por NCM: o modo `mapa_por_ncm` está testado, mas nenhuma regra o usa; a tabela NCM × cClassTrib precisa de fonte oficial. A promessa de "depende do NCM" saiu do texto do catálogo.
+    - ◐ Texto "cadastre em Gestão › Regras" corrigido (a tela não existe; ela exigiria mockup aprovado, fica para a Fase 5).
+    - Falta: regra de CSOSN do emitente (precisa consultar o regime do fornecedor); leitor ABRASF/Ginfes (precisa de XMLs reais de prefeituras para validar o leiaute); validação de assinatura e protocolo (Fase 0, decisão 2).
 
 ## Baixa prioridade (UX e documentação)
 

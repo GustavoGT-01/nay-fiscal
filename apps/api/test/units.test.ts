@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { auditDocument } from '../src/engine/evaluator.js';
 import { RULES } from '../src/engine/catalog.js';
 import { parseFiscalXml, type ParsedDocument } from '../src/xml/nfe-parser.js';
+import { directionOf, rootsOf } from '../src/services/ingest/direction.js';
 import { presentFinding, supplierMessage } from '../src/services/present.js';
 
 const CNPJ_TRANSP = '11222333000181';
@@ -18,7 +19,7 @@ const cte = (extra = '') => `<?xml version="1.0"?>
 <imp><ICMS><ICMS00><CST>00</CST><vBC>1500.00</vBC><vICMS>180.00</vICMS></ICMS00></ICMS>${extra}</imp>
 </infCte></CTe><protCTe><infProt><nProt>141260000000001</nProt><cStat>100</cStat><dhRecbto>2026-10-20T10:01:00-03:00</dhRecbto></infProt></protCTe></cteProc>`;
 
-describe('CT-e (modelo 57): comportamento atual', () => {
+describe('CT-e (modelo 57)', () => {
   const doc = () => parseFiscalXml(cte()) as ParsedDocument;
 
   it('lê chave, número, partes, frete e protocolo', () => {
@@ -36,7 +37,7 @@ describe('CT-e (modelo 57): comportamento atual', () => {
     expect(d.additionalInfo).toBe('Observação do frete');
   });
 
-  it('vira um item único "FRETE" sem IBS/CBS (limitação conhecida, item 4.4 do plano)', () => {
+  it('vira um item único "FRETE" (o CT-e tem um só serviço) e sem o grupo IBSCBS não traz IBS/CBS', () => {
     const d = doc();
     expect(d.items).toHaveLength(1);
     expect(d.items[0]).toMatchObject({ code: 'FRETE', cfop: '6353', total: 1500, cstIcms: '00', hasIbsCbs: false, cstIbsCbs: null });
@@ -45,6 +46,16 @@ describe('CT-e (modelo 57): comportamento atual', () => {
   it('lê o grupo IBSCBS quando o CT-e traz', () => {
     const d = parseFiscalXml(cte('<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib></IBSCBS>')) as ParsedDocument;
     expect(d.items[0]).toMatchObject({ hasIbsCbs: true, cstIbsCbs: '000', cClassTrib: '000001' });
+  });
+
+  it('lê alíquotas e valores de IBS e CBS do grupo e os soma no documento', () => {
+    const grupo = '<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>1500.00</vBC>' +
+      '<gIBSUF><pIBSUF>0.10</pIBSUF><vIBSUF>1.50</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun>' +
+      '<gCBS><pCBS>0.90</pCBS><vCBS>13.50</vCBS></gCBS></gIBSCBS></IBSCBS>';
+    const d = parseFiscalXml(cte(grupo)) as ParsedDocument;
+    expect(d.items[0]).toMatchObject({ pIbs: 0.1, vIbs: 1.5, pCbs: 0.9, vCbs: 13.5 });
+    expect(d.vIbs).toBe(1.5);
+    expect(d.vCbs).toBe(13.5);
   });
 
   it('o motor audita o CT-e sem quebrar', () => {
@@ -143,5 +154,33 @@ describe('present.ts: mensagem ao fornecedor', () => {
     expect(m).toContain('2. Outro erro');
     expect(m).not.toContain('2. Outro erro (item');
     expect(m).toContain('USE A CC-E');
+  });
+});
+
+describe('direção da nota', () => {
+  const emit = (cnpj: string, tpNF: string) => ({ emitter: { cnpj } as ParsedDocument['emitter'], tpNF } as Pick<ParsedDocument, 'emitter' | 'tpNF'>);
+  const RAIZ = new Set(['11222333']);
+
+  it('emitida pelo cliente (matriz ou filial) é saída', () => {
+    expect(directionOf(emit('11222333000181', '1'), RAIZ)).toBe('saida');
+    expect(directionOf(emit('11222333000262', '1'), RAIZ)).toBe('saida');
+  });
+
+  it('emitida por outra empresa é entrada', () => {
+    expect(directionOf(emit('99888777000155', '1'), RAIZ)).toBe('entrada');
+  });
+
+  it('emissão própria de entrada (tpNF 0) é entrada, mesmo com o cliente como emitente', () => {
+    expect(directionOf(emit('11222333000181', '0'), RAIZ)).toBe('entrada');
+  });
+
+  it('estabelecimento de outra raiz cadastrado no cliente também conta como o cliente', () => {
+    const roots = rootsOf({ cnpj: '11222333000181', establishments: [{ cnpj: '44555666000100' }, { cnpj: '123' }] });
+    expect([...roots].sort()).toEqual(['11222333', '44555666']);
+    expect(directionOf(emit('44555666000100', '1'), roots)).toBe('saida');
+  });
+
+  it('emitente CPF nunca é o cliente, ainda que os 8 primeiros dígitos coincidam com a raiz', () => {
+    expect(directionOf(emit('11222333000', '1'), RAIZ)).toBe('entrada');
   });
 });

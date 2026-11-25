@@ -118,6 +118,31 @@ function address(ender: any, ie: unknown): ParsedAddress {
   };
 }
 
+/** Grupo IBSCBS (NF-e por item, CT-e por documento): CST, classificacao, aliquotas e valores de IBS e CBS. */
+interface IbsCbsXml {
+  CST?: unknown;
+  cClassTrib?: unknown;
+  gIBSCBS?: {
+    vIBS?: unknown;
+    gIBSUF?: { pIBSUF?: unknown; vIBSUF?: unknown };
+    gIBSMun?: { pIBSMun?: unknown; vIBSMun?: unknown };
+    gCBS?: { pCBS?: unknown; vCBS?: unknown };
+  };
+}
+
+function ibsCbsOf(ibs: IbsCbsXml | undefined) {
+  const g = ibs?.gIBSCBS;
+  return {
+    hasIbsCbs: !!ibs,
+    cstIbsCbs: opt(ibs?.CST),
+    cClassTrib: opt(ibs?.cClassTrib),
+    pIbs: num(g?.gIBSUF?.pIBSUF) + num(g?.gIBSMun?.pIBSMun),
+    vIbs: num(g?.vIBS) || num(g?.gIBSUF?.vIBSUF) + num(g?.gIBSMun?.vIBSMun),
+    pCbs: num(g?.gCBS?.pCBS),
+    vCbs: num(g?.gCBS?.vCBS),
+  };
+}
+
 /** Retorna o primeiro filho (ex.: ICMS00, ICMSSN102) de um grupo de imposto. */
 function firstChild(group: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
   if (!group || typeof group !== 'object') return undefined;
@@ -172,10 +197,7 @@ export function parseFiscalXml(xml: string): ParseResult {
     const icms = firstChild(imp.ICMS);
     const pis = firstChild(imp.PIS);
     const cofins = firstChild(imp.COFINS);
-    const ibs = imp.IBSCBS;
-    const g = ibs?.gIBSCBS;
-    const pIbs = num(g?.gIBSUF?.pIBSUF) + num(g?.gIBSMun?.pIBSMun);
-    const vIbs = num(g?.vIBS) || num(g?.gIBSUF?.vIBSUF) + num(g?.gIBSMun?.vIBSMun);
+    const ibs = ibsCbsOf(imp.IBSCBS);
     return {
       n: Number(det['@nItem'] ?? 0),
       code: str(p.cProd),
@@ -193,13 +215,7 @@ export function parseFiscalXml(xml: string): ParseResult {
       vPis: num(pis?.vPIS),
       cstCofins: opt(cofins?.CST),
       vCofins: num(cofins?.vCOFINS),
-      hasIbsCbs: !!ibs,
-      cstIbsCbs: opt(ibs?.CST),
-      cClassTrib: opt(ibs?.cClassTrib),
-      pIbs,
-      vIbs,
-      pCbs: num(g?.gCBS?.pCBS),
-      vCbs: num(g?.gCBS?.vCBS),
+      ...ibs,
     };
   });
 
@@ -262,6 +278,8 @@ function parseCte(doc: any, xml: string): ParsedDocument {
   const dest = inf.dest ?? inf.rem ?? {};
   const total = num(inf.vPrest?.vTPrest);
   const icms = firstChild(inf.imp?.ICMS);
+  // o CT-e tem um unico servico (vTPrest): o grupo IBSCBS vale para o documento e fica no unico item
+  const ibs = ibsCbsOf(inf.imp?.IBSCBS);
   return {
     kind: 'documento',
     model: '57',
@@ -303,8 +321,8 @@ function parseCte(doc: any, xml: string): ParsedDocument {
     vIcms: num(icms?.vICMS),
     vPis: 0,
     vCofins: 0,
-    vIbs: 0,
-    vCbs: 0,
+    vIbs: ibs.vIbs,
+    vCbs: ibs.vCbs,
     cStat: opt(prot?.cStat),
     protocol: opt(prot?.nProt),
     items: [
@@ -312,8 +330,7 @@ function parseCte(doc: any, xml: string): ParsedDocument {
         n: 1, code: 'FRETE', description: 'Prestação de serviço de transporte', ncm: '', cfop: str(ide.CFOP), unit: 'UN',
         qty: 1, unitValue: total, total, icmsTable: icms ? (icms.CSOSN !== undefined ? 'CSOSN' : 'CST') : null,
         cstIcms: icms ? opt(icms.CSOSN ?? icms.CST) : null, vIcms: num(icms?.vICMS), cstPis: null, vPis: 0,
-        cstCofins: null, vCofins: 0, hasIbsCbs: !!inf.imp?.IBSCBS, cstIbsCbs: opt(inf.imp?.IBSCBS?.CST),
-        cClassTrib: opt(inf.imp?.IBSCBS?.cClassTrib), pIbs: 0, vIbs: 0, pCbs: 0, vCbs: 0,
+        cstCofins: null, vCofins: 0, ...ibs,
       },
     ],
     xml,
