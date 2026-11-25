@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit -p .",
     "test": "vitest run",
     "db:setup": "prisma db push && tsx prisma/seed.ts",
+    "bench": "tsx prisma/bench.ts",
     "db:seed": "tsx prisma/seed.ts",
     "db:clear": "tsx prisma/clear.ts",
     "senha": "tsx prisma/senha.ts",

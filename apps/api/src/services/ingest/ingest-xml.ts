@@ -1,9 +1,10 @@
-import { parseFiscalXml } from '../../xml/nfe-parser.js';
+import { parseFiscalXml, type ParseResult } from '../../xml/nfe-parser.js';
 import * as clients from '../../models/client.js';
 import * as documents from '../../models/document.js';
-import { auditStoredDocument } from '../audit.js';
+import { auditParsedDocument, auditStoredDocument } from '../audit.js';
 import type { RuleSeed } from '../../engine/catalog.js';
 import type { ClientContext } from '../../engine/evaluator.js';
+import { activeRules } from '../../models/rule.js';
 
 type IngestOutcome = 'novo' | 'atualizado' | 'cancelamento' | 'ignorado';
 
@@ -11,6 +12,8 @@ type IngestOutcome = 'novo' | 'atualizado' | 'cancelamento' | 'ignorado';
 export interface IngestShared {
   rules?: RuleSeed[];
   client?: Awaited<ReturnType<typeof clients.findById>>;
+  /** XML ja lido pelo chamador: nao le de novo. */
+  parsed?: ParseResult;
 }
 
 /** Le um XML, grava (ou atualiza) o documento e audita. */
@@ -18,7 +21,7 @@ export async function ingestXml(clientId: string, xml: string, uploadId?: string
   const client = shared.client ?? (await clients.findById(clientId));
   const root = client.cnpj.slice(0, 8);
   const ctx: ClientContext = { cnpjRoot: root, cityCode: client.cityCode, city: client.city };
-  const parsed = parseFiscalXml(xml);
+  const parsed = shared.parsed ?? parseFiscalXml(xml);
 
   if (parsed.kind === 'cancelamento') {
     const doc = await documents.findByKey(clientId, parsed.key);
@@ -97,6 +100,6 @@ export async function ingestXml(clientId: string, xml: string, uploadId?: string
     if (!existing) throw err;
     doc = await documents.saveWithItems(existing.id, data, parsed.items);
   }
-  const status = await auditStoredDocument(doc.id, shared.rules, ctx);
+  const status = await auditParsedDocument(doc, parsed, shared.rules ?? (await activeRules()), ctx);
   return { outcome: existing ? 'atualizado' : 'novo', status };
 }

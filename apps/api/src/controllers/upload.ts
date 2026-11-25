@@ -61,7 +61,6 @@ export async function createUploads(req: FastifyRequest, reply: FastifyReply) {
     created.push(up);
     void enqueue(async () => {
       try {
-        queuedBytes -= f.buf.length;
         if (kind === 'SPED') throw new Error('Leitura de SPED chega numa próxima versão.');
         if (kind === 'XML' && f.buf.length > MAX_XML_BYTES) throw new Error('Arquivo grande demais para um XML fiscal.');
         const xmls = kind === 'ZIP' ? await xmlsFromZip(f.buf) : [{ name: f.name, xml: f.buf.toString('utf8') }];
@@ -69,6 +68,9 @@ export async function createUploads(req: FastifyRequest, reply: FastifyReply) {
       } catch (e) {
         req.log.warn({ err: e, uploadId: up.id }, 'falha ao processar envio');
         await uploads.update(up.id, { status: 'ERRO', message: String((e as Error).message ?? 'Falha ao processar.').slice(0, 300) }).catch(() => {});
+      } finally {
+        // o buffer do arquivo fica na memoria ate aqui; so agora a fila "libera" esse espaco
+        queuedBytes -= f.buf.length;
       }
     });
   }

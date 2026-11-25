@@ -33,20 +33,27 @@ export async function processUpload(uploadId: string, files: { name: string; xml
     console.warn(JSON.stringify({ msg: 'arquivo nao importado', uploadId, file: name, reason }));
     if (failures.length < 3) failures.push(`${name} — ${reason}`);
   };
-  const parsed = files.map((f) => {
-    try { return { f, p: parseFiscalXml(f.xml), e: null as unknown }; } catch (e) { return { f, p: null, e }; }
-  });
+  const tryParse = (xml: string) => {
+    try { return { p: parseFiscalXml(xml), e: null as unknown }; } catch (e) { return { p: null, e }; }
+  };
+  // O lote nao e lido de uma vez: guardar a leitura de cada nota (itens, enderecos...) ocupa varias vezes o tamanho do
+  // texto do XML. So a deteccao automatica de cliente precisa contar CNPJs antes de gravar; guarda so a contagem, e cada
+  // arquivo e lido de novo na hora de gravar. Com cliente escolhido, cada arquivo e lido uma unica vez.
   const freq = new Map<string, number>();
-  for (const { p } of parsed) {
-    if (p?.kind !== 'documento') continue;
-    for (const c of new Set([p.emitter.cnpj.slice(0, 8), p.recipient.cnpj.slice(0, 8)])) if (c) freq.set(c, (freq.get(c) ?? 0) + 1);
+  if (!fixed) {
+    for (const f of files) {
+      const { p } = tryParse(f.xml);
+      if (p?.kind !== 'documento') continue;
+      for (const c of new Set([p.emitter.cnpj.slice(0, 8), p.recipient.cnpj.slice(0, 8)])) if (c) freq.set(c, (freq.get(c) ?? 0) + 1);
+    }
   }
 
   let processed = 0, ok = 0, err = 0, failed = 0, skipped = 0;
   const notMine: string[] = [];
   const usedClients = new Map<string, number>();
   const clientCache = new Map<string, Awaited<ReturnType<typeof clients.findById>>>();
-  for (const { f, p, e } of parsed) {
+  for (const f of files) {
+    const { p, e } = tryParse(f.xml);
     try {
       if (!p) { failed++; fail(f.name, e); continue; }
       let clientId: string | undefined;
@@ -75,7 +82,7 @@ export async function processUpload(uploadId: string, files: { name: string; xml
       }
       let client = clientCache.get(clientId);
       if (!client) { client = await clients.findById(clientId); clientCache.set(clientId, client); }
-      const r = await ingestXml(clientId, f.xml, uploadId, { rules, client });
+      const r = await ingestXml(clientId, f.xml, uploadId, { rules, client, parsed: p });
       usedClients.set(clientId, (usedClients.get(clientId) ?? 0) + 1);
       if (r.status === 'erro') err++;
       else if (r.status) ok++;

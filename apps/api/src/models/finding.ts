@@ -14,11 +14,12 @@ export const countByRuleAndSeverity = (clientId: string) =>
     orderBy: { _count: { ruleCode: 'desc' } },
   });
 
-export const listForRuleGroups = (where: Prisma.FindingWhereInput) =>
-  prisma.finding.findMany({
-    where,
-    select: { ruleCode: true, severity: true, documentId: true, document: { select: { number: true } } },
-  });
+/**
+ * Achados contados no banco por regra, severidade e nota: uma linha por combinacao, com a quantidade de achados
+ * (itens). Nao carrega o achado nem a nota; a tela soma `items` por regra e conta as notas distintas.
+ */
+export const countByRuleSeverityDocument = (where: Prisma.FindingWhereInput) =>
+  prisma.finding.groupBy({ by: ['ruleCode', 'severity', 'documentId'], _count: true, where });
 
 export const EXPORT_MAX_ROWS = 50_000;
 

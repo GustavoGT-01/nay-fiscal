@@ -226,3 +226,84 @@ describe('exportacao CSV e XLSX com achados reais', () => {
     expect(encontrada).toBe(true);
   });
 });
+
+describe('painel e achados por regra: agregação no banco', () => {
+  const antiga = async () =>
+    prisma.document.create({
+      data: {
+        clientId, model: '55', key: '9'.repeat(44), number: '1', series: '1', direction: 'entrada', issuedAt: new Date('2025-01-10T12:00:00-03:00'),
+        emitterCnpj: FORN_BOM, emitterName: 'Fornecedor Antigo', xml: '<NFe/>', status: 'ok', verdict: 'pode_creditar', total: 99_999_900n, auditedAt: new Date('2026-11-01T12:00:00-03:00'),
+      },
+    });
+
+  it('nota fora da janela de 15 dias conta nos totais, no maior valor e na última auditoria, mas não vem no gráfico', async () => {
+    const antes = (await get(`/api/dashboard?clientId=${clientId}`)).json();
+    const velha = await antiga();
+    try {
+      const d = (await get(`/api/dashboard?clientId=${clientId}`)).json();
+      expect(d.totals.audited).toBe(antes.totals.audited + 1);
+      expect(d.totals.ok).toBe(antes.totals.ok + 1);
+      expect(d.barcode).toHaveLength(antes.barcode.length); // a nota de jan/2025 nao entra na janela
+      expect(d.barcode.map((b: { id: string }) => b.id)).not.toContain(velha.id);
+      expect(d.verdicts.entradas.pode_creditar).toBe(antes.verdicts.entradas.pode_creditar + 1);
+      // o maior valor da carteira inteira (R$ 999.999,00) define o peso das barras: as notas da janela ficam leves
+      expect(d.barcode.every((b: { weight: number }) => b.weight === 1)).toBe(true);
+      expect(d.lastAuditAt).not.toBeNull();
+    } finally {
+      await prisma.document.delete({ where: { id: velha.id } });
+    }
+  });
+
+  it('carteira vazia: painel zerado, sem erro', async () => {
+    const vazio = await prisma.client.create({ data: { officeId: (await prisma.client.findUniqueOrThrow({ where: { id: clientId } })).officeId, name: 'Vazia', cnpj: cnpjFrom('445566770001'), ...MGA } });
+    const d = (await get(`/api/dashboard?clientId=${vazio.id}`)).json();
+    expect(d.totals).toEqual({ audited: 0, ok: 0, erro: 0, atencao: 0, cancelada: 0 });
+    expect(d.barcode).toEqual([]);
+    expect(d.lastAuditAt).toBeNull();
+  });
+
+  it('achados por regra somam itens e contam notas distintas, com o número das notas de amostra', async () => {
+    const ruim = await prisma.document.findFirstOrThrow({ where: { clientId, emitterName: NOME_FORMULA } });
+    const extra = await prisma.finding.create({ data: { documentId: ruim.id, ruleCode: 'cfop-cclasstrib-remessa', field: 'cclass_trib', kind: 'tributaria', severity: 'erro', observed: '000001', expected: '410999' } });
+    try {
+      const regras = (await get(`/api/audit/rules?clientId=${clientId}&direction=all`)).json() as { code: string; items: number; notes: number; severity: string; sampleNotes: { id: string; number: string }[] }[];
+      const g = regras.find((r) => r.code === 'cfop-cclasstrib-remessa')!;
+      expect(g.items).toBe(2); // dois achados (itens)...
+      expect(g.notes).toBe(1); // ...na mesma nota
+      expect(g.severity).toBe('erro');
+      expect(g.sampleNotes).toEqual([{ id: ruim.id, number: ruim.number }]);
+    } finally {
+      await prisma.finding.delete({ where: { id: extra.id } });
+    }
+  });
+});
+
+describe('cache de regras', () => {
+  it('guarda a leitura, e syncRules/invalidateRules mostram a edição na hora', async () => {
+    const { ruleMap, activeRules, invalidateRules } = await import('../src/models/rule.js');
+    invalidateRules();
+    const titulo = (await ruleMap()).get('chave-dv')!.title;
+    await prisma.rule.update({ where: { code: 'chave-dv' }, data: { title: 'EDITADA NO BANCO' } });
+    try {
+      expect((await ruleMap()).get('chave-dv')!.title).toBe(titulo); // ainda do cache
+      invalidateRules();
+      expect((await ruleMap()).get('chave-dv')!.title).toBe('EDITADA NO BANCO');
+      // regra desligada sai das ativas, mas continua no mapa de todas
+      await prisma.rule.update({ where: { code: 'chave-dv' }, data: { active: false } });
+      invalidateRules();
+      expect((await activeRules()).some((r) => r.code === 'chave-dv')).toBe(false);
+      expect((await ruleMap()).has('chave-dv')).toBe(true);
+    } finally {
+      await prisma.rule.update({ where: { code: 'chave-dv' }, data: { title: titulo, active: true } });
+      invalidateRules();
+    }
+  });
+
+  it('a mesma leitura serve várias chamadas (uma consulta, não uma por chamada)', async () => {
+    const { activeRules, ruleMap, invalidateRules } = await import('../src/models/rule.js');
+    invalidateRules();
+    const a = await activeRules();
+    expect(await activeRules()).toBe(a); // mesma lista, nao uma nova leitura
+    expect(await ruleMap()).toBe(await ruleMap());
+  });
+});

@@ -29,12 +29,16 @@ export async function dashboard(req: FastifyRequest): Promise<DashboardDTO> {
   const { clientId, direction } = ScopeQuery.parse(req.query);
   const client = await ownClient(req, clientId);
   const dir = directionWhere(direction);
-  const docs = await documents.listForDashboard(client.id, dir);
+  // totais por agregacao no banco; so as notas da janela do grafico (14 dias) vem para a memoria
+  const summary = await documents.dashboardSummary(client.id, dir);
+  const docs = summary.latestIssuedAt
+    ? await documents.listForDashboard(client.id, dir, new Date(summary.latestIssuedAt.getTime() - documents.DASHBOARD_WINDOW_DAYS * 86_400_000))
+    : [];
   const rules = await ruleMap();
-  const totals = { audited: docs.length, ok: 0, erro: 0, atencao: 0, cancelada: 0 };
-  for (const d of docs) if (d.status in totals) (totals as any)[d.status]++;
+  const totals = { audited: summary.byStatus.reduce((a, r) => a + r.count, 0), ok: 0, erro: 0, atencao: 0, cancelada: 0 };
+  for (const r of summary.byStatus) if (r.status === 'ok' || r.status === 'erro' || r.status === 'atencao' || r.status === 'cancelada') totals[r.status] = r.count;
   const itemsByRule = await findings.errorItemsByRule({ document: { clientId: client.id, ...dir, status: { not: 'cancelada' } }, severity: 'erro' });
-  const maxV = Math.max(...docs.map((d) => d.total), 1);
+  const maxV = Math.max(summary.maxTotal, 1);
   // vereditos sempre das duas direcoes: os paineis de entrada e saida aparecem lado a lado
   const byVerdict = await documents.countByDirectionAndVerdict(client.id);
   const vCount = (direction: string, verdict: string) => byVerdict.find((x) => x.direction === direction && x.verdict === verdict)?._count ?? 0;
@@ -54,7 +58,7 @@ export async function dashboard(req: FastifyRequest): Promise<DashboardDTO> {
       };
     }),
     topErrors: itemsByRule.slice(0, 4).map((r) => ({ code: r.ruleCode, title: rules.get(r.ruleCode)?.title ?? r.ruleCode, items: r._count })),
-    lastAuditAt: docs.reduce<Date | null>((a, d) => (d.auditedAt && (!a || d.auditedAt > a) ? d.auditedAt : a), null)?.toISOString() ?? null,
+    lastAuditAt: summary.lastAuditAt?.toISOString() ?? null,
     verdicts,
   };
 }

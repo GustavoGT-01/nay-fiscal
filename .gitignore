@@ -3,6 +3,8 @@ dist/
 .env
 *.db
 *.db-journal
+*.db-wal
+*.db-shm
 apps/api/storage/
 # XMLs reais de clientes ficam fora do git; fixtures sinteticas ficam em fixtures/xml
 /*.xml

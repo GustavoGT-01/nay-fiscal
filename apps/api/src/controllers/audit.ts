@@ -14,22 +14,26 @@ import { SEV_ORDER, directionWhere, periodWhere } from '../services/filters.js';
 export async function ruleGroups(req: FastifyRequest): Promise<RuleGroupDTO[]> {
   const q = ScopeQuery.parse(req.query);
   const client = await ownClient(req, q.clientId);
-  const list = await findings.listForRuleGroups({ severity: { not: 'ok' }, document: { clientId: client.id, status: { not: 'cancelada' }, ...periodWhere(q), ...directionWhere(q.direction) } });
+  // contagem no banco (regra x severidade x nota); aqui so se soma e se escolhem as notas de amostra
+  const rows = await findings.countByRuleSeverityDocument({ severity: { not: 'ok' }, document: { clientId: client.id, status: { not: 'cancelada' }, ...periodWhere(q), ...directionWhere(q.direction) } });
   const rules = await ruleMap();
-  const groups = new Map<string, RuleGroupDTO & { docs: Map<string, string> }>();
-  for (const f of list) {
+  const groups = new Map<string, RuleGroupDTO & { docs: Set<string> }>();
+  for (const f of rows) {
     const r = rules.get(f.ruleCode);
     if (!r) continue;
     let g = groups.get(f.ruleCode);
     if (!g) {
-      g = { code: r.code, title: r.title, severity: f.severity as Severity, description: r.description, fixTag: r.fixTag, items: 0, notes: 0, sampleNotes: [], docs: new Map() };
+      g = { code: r.code, title: r.title, severity: f.severity as Severity, description: r.description, fixTag: r.fixTag, items: 0, notes: 0, sampleNotes: [], docs: new Set() };
       groups.set(f.ruleCode, g);
     }
-    g.items++;
-    g.docs.set(f.documentId, f.document.number);
+    if ((SEV_ORDER[f.severity] ?? 9) < SEV_ORDER[g.severity]!) g.severity = f.severity as Severity; // o grupo leva a severidade mais grave
+    g.items += f._count;
+    g.docs.add(f.documentId);
   }
+  const sampleIds = [...new Set([...groups.values()].flatMap((g) => [...g.docs].slice(0, 8)))];
+  const numbers = new Map((await documents.numbersByIds(sampleIds)).map((d) => [d.id, d.number]));
   return [...groups.values()]
-    .map(({ docs, ...g }) => ({ ...g, notes: docs.size, sampleNotes: [...docs].slice(0, 8).map(([id, number]) => ({ id, number })), fixTag: g.fixTag?.includes('{esperado}') ? g.fixTag.replace('{esperado}', g.code === 'cfop-cclasstrib-remessa' ? '410999' : '…') : g.fixTag }))
+    .map(({ docs, ...g }) => ({ ...g, notes: docs.size, sampleNotes: [...docs].slice(0, 8).map((id) => ({ id, number: numbers.get(id) ?? '' })), fixTag: g.fixTag?.includes('{esperado}') ? g.fixTag.replace('{esperado}', g.code === 'cfop-cclasstrib-remessa' ? '410999' : '…') : g.fixTag }))
     .sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity] || b.items - a.items);
 }
 

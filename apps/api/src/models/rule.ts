@@ -33,16 +33,35 @@ export async function syncRules() {
     const data = { ...r, definition: JSON.stringify(r.definition) };
     await prisma.rule.upsert({ where: { code: r.code }, create: data, update: data });
   }
+  invalidateRules();
   return RULES.length;
 }
 
-export async function activeRules(): Promise<RuleSeed[]> {
-  const rows = await prisma.rule.findMany({ where: { active: true } });
-  return rows.map(toRuleSeed);
+/**
+ * As regras mudam so quando a API sobe (syncRules); ler a tabela inteira e converter o JSON de cada uma
+ * a cada requisicao era trabalho repetido. Guarda o resultado por pouco tempo: uma edicao feita direto no
+ * banco aparece em ate TTL_MS, e syncRules invalida na hora.
+ */
+const TTL_MS = 30_000;
+let cache: { at: number; all: Map<string, Rule>; active: RuleSeed[] } | null = null;
+
+export const invalidateRules = () => {
+  cache = null;
+};
+
+async function loaded() {
+  if (cache && Date.now() - cache.at < TTL_MS) return cache;
+  const rows = await prisma.rule.findMany();
+  cache = { at: Date.now(), all: new Map(rows.map((r) => [r.code, r])), active: rows.filter((r) => r.active).map(toRuleSeed) };
+  return cache;
 }
 
-/** Todas as regras (ativas ou nao) indexadas pelo codigo. */
+/** Regras ativas. A lista e compartilhada: quem chama so le. */
+export async function activeRules(): Promise<RuleSeed[]> {
+  return (await loaded()).active;
+}
+
+/** Todas as regras (ativas ou nao) indexadas pelo codigo. So leitura. */
 export async function ruleMap() {
-  const rules = await prisma.rule.findMany();
-  return new Map(rules.map((r) => [r.code, r]));
+  return (await loaded()).all;
 }
