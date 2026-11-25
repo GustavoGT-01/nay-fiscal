@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { z } from 'zod';
+import { IdParam } from '../lib/query.js';
 import type { AdminClientSummaryDTO, AdminUserDTO, WipeResultDTO } from '@nay/shared';
 import { prisma } from '../config/db.js';
 import { ownClient } from '../middleware/auth.js';
@@ -23,7 +23,7 @@ async function notify(req: FastifyRequest, count: number, scope: string) {
 
 /** Apaga uma nota (itens e achados vao junto). */
 export async function deleteNote(req: FastifyRequest, reply: FastifyReply): Promise<WipeResultDTO | void> {
-  const { id } = z.object({ id: z.string() }).parse(req.params);
+  const { id } = IdParam.parse(req.params);
   const doc = await documents.findForDelete(id, req.me.officeId);
   if (!doc) return reply.code(404).send({ message: 'Nota não encontrada.' });
   await documents.remove(doc.id);
@@ -34,7 +34,7 @@ export async function deleteNote(req: FastifyRequest, reply: FastifyReply): Prom
 
 /** Apaga todas as notas, envios e auditorias de um cliente. */
 export async function wipeClient(req: FastifyRequest): Promise<WipeResultDTO> {
-  const { id } = z.object({ id: z.string() }).parse(req.params);
+  const { id } = IdParam.parse(req.params);
   const client = await ownClient(req, id);
   const r = await wipeClientData(prisma, [client.id]);
   await notify(req, r.documents, `de ${client.name}`);

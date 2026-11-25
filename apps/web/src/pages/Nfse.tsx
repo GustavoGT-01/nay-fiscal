@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { brl, fmtDate } from '../lib/api';
 import { useSession } from '../lib/session';
-import { EmptyState, Seg, StatusTag } from '../lib/ui';
+import { EmptyState, QueryError, Seg, StatusTag } from '../lib/ui';
 import { useOpenNote } from '../components/note-drawer';
 import { NFSE_PER_PAGE as PER, useNfse } from '../hooks/useNfse';
 
@@ -32,6 +32,7 @@ export function Nfse() {
           options={[{ value: 'saida', label: 'Prestadas' }, { value: 'entrada', label: 'Tomadas' }, { value: 'all', label: 'Todas' }]} />
       </div>
 
+      {sum.isError && !list.isError && <QueryError error={sum.error} onRetry={() => sum.refetch()} what="os totais" />}
       {s && (
         <div className="kv nfse-kpis">
           <div><small>Notas</small><b>{s.notes}{s.withError ? <span className="tag erro" style={{ marginLeft: 8 }}>{s.withError} com erro</span> : null}</b></div>
@@ -44,7 +45,7 @@ export function Nfse() {
       )}
 
       <div className="table-wrap" style={{ marginTop: 14 }}>
-        {list.isLoading ? <div className="skel" style={{ height: 240, margin: 16 }} /> : total === 0 ? (
+        {list.isLoading ? <div className="skel" style={{ height: 240, margin: 16 }} /> : list.isError ? <QueryError error={list.error} onRetry={() => list.refetch()} what="as NFS-e" /> : total === 0 ? (
           <EmptyState icon="ti-receipt" title="Nenhuma NFS-e ainda"
             text="Importe os XMLs de NFS-e do padrão nacional (baixados no Emissor Nacional ou no portal da sua prefeitura conveniada)."
             action={<Link className="btn primary" to="/importar"><i className="ti ti-cloud-upload" />Importar NFS-e</Link>} />

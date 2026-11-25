@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# o CI so le o repositorio
+permissions:
+  contents: read
+
+# um push novo na mesma branch cancela a rodada anterior
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Verificar (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # o produto roda no Windows (iniciar.bat) e os caminhos de arquivo dos testes mudam entre os dois
+        os: [ubuntu-latest, windows-latest]
+    env:
+      # so o `prisma generate` precisa da variavel; cada teste cria o proprio banco temporario
+      DATABASE_URL: file:./ci.db
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Gerar o cliente do Prisma
+        run: npm exec -w @nay/api -- prisma generate
+
+      - name: Tipos (TypeScript)
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Testes (API, front e shared)
+        run: npm test
+
+      - name: Build do front
+        run: npm run build -w @nay/web

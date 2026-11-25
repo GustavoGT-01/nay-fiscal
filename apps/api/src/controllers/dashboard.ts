@@ -1,5 +1,6 @@
 import type { FastifyRequest } from 'fastify';
 import type { ClientDTO, DashboardDTO, EntradaVerdict, NoteStatus, SaidaVerdict } from '@nay/shared';
+import { ScopeQuery } from '../lib/query.js';
 import { ownClient } from '../middleware/auth.js';
 import * as clients from '../models/client.js';
 import * as documents from '../models/document.js';
@@ -25,7 +26,7 @@ export async function listClients(req: FastifyRequest): Promise<ClientDTO[]> {
 }
 
 export async function dashboard(req: FastifyRequest): Promise<DashboardDTO> {
-  const { clientId, direction } = req.query as { clientId?: string; direction?: string };
+  const { clientId, direction } = ScopeQuery.parse(req.query);
   const client = await ownClient(req, clientId);
   const dir = directionWhere(direction);
   const docs = await documents.listForDashboard(client.id, dir);

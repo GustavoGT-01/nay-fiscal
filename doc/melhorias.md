@@ -15,9 +15,9 @@ Levantamento feito em 11/11/2026, após a reorganização em MVC. Cada item cita
 
 ## Média prioridade
 
-7. ◐ **Validação de entrada.** *(em parte: datas, página, tamanho e clientId validados; P2025 vira 404; falta zod nos demais query params)* Query params usam `req.query as {...}` sem zod. Data inválida vira erro 500, `page` aceita negativo, e `findFirstOrThrow` responde 500 em vez de 404.
+7. ✅ **Validação de entrada.** *(resolvido em 25/11/2026: todos os parâmetros de URL passam por esquemas zod em `apps/api/src/lib/query.ts`; valor fora da lista dá 400; P2025 vira 404)* Query params usam `req.query as {...}` sem zod. Data inválida vira erro 500, `page` aceita negativo, e `findFirstOrThrow` responde 500 em vez de 404.
 8. **Performance.** ◐ *(em parte, 17/11/2026: a importação lê regras e cliente uma vez por lote em vez de por nota; índices novos em `DocumentItem(documentId)`, `Document(clientId, direction, verdict)`, `Document(clientId, status)`, `Document(key)`, `Finding(documentId, severity)`, `AuditRun`, `Notification` e `Upload`; falta paginar, agregar o painel no banco e cachear `ruleMap()`)* Cada XML é lido duas vezes (importação e auditoria); `ruleMap()` e `rule.findMany()` rodam a cada requisição; o dashboard e a auditoria carregam tudo em memória; o `JSON.parse` do campo `nfse` roda em todas as linhas. Faltam índices em `Document(direction, verdict)` e `Finding(documentId, severity)`. Sem paginação em `/api/audit/export` e nas regras.
-9. **Testes.** Não há teste das rotas de leitura, exportação XLSX/CSV, ZIP, `refresh`, `ingest`/`audit` nem da web. `npm test` na raiz só roda a API. Sem CI nem lint; o `build` da API é só `tsc --noEmit`.
+9. ◐ **Testes.** *(em parte, 25/11/2026: `npm test` roda API, front e shared (150 testes); há teste de envio multipart, auditoria em segundo plano, leituras, exportação CSV/XLSX, CT-e, `present.ts`, simulador do Simples e componentes do front; CI no GitHub Actions e ESLint ativos; falta teste da contrapressão de 200 MB do envio, e o `build` da API segue `tsc --noEmit`)*
 10. **Regras fiscais.**
     - O ISS é validado numa faixa fixa de 2% a 5% para qualquer município, sem tabela municipal.
     - Há datas diferentes para a Reforma Tributária: `INICIO_REFORMA` (NFS-e), 03/08/2026 (IBSCBS da NF-e) e datas fixas em `Shell.tsx` e `Inicio.tsx`. Centralizar em `packages/shared`.
@@ -29,7 +29,7 @@ Levantamento feito em 11/11/2026, após a reorganização em MVC. Cada item cita
 
 ## Baixa prioridade (UX e documentação)
 
-11. Telas **Créditos** e **Ajuda** ainda são "Em breve". Notificações nunca são marcadas como lidas (`Notification.readAt` não é gravado). Poucos estados de erro nas telas. O cliente padrão é buscado por `name.startsWith('Empresa')` (`session.tsx`). O PDF carrega fontes do Google (quebra offline). O "Diagnóstico IA" é um conjunto de regex; `ANTHROPIC_API_KEY` existe no `.env.example` mas não é usada. A animação de abertura (2,2 s) não pode ser pulada. Listas sem ordenação de colunas nem virtualização.
+11. Telas **Créditos** e **Ajuda** ainda são "Em breve". Notificações nunca são marcadas como lidas (`Notification.readAt` não é gravado). Estados de erro: resolvidos nas telas principais (25/11/2026; Início, Notas, NFS-e, Auditoria e Importar mostram a falha e deixam tentar de novo). O cliente padrão é buscado por `name.startsWith('Empresa')` (`session.tsx`). O "Diagnóstico IA" é um conjunto de regex; `ANTHROPIC_API_KEY` existe no `.env.example` mas não é usada. A animação de abertura (2,2 s) não pode ser pulada. Listas sem ordenação de colunas nem virtualização.
 12. ✅ *(resolvido: o tunnel.bat recusa senhas de demonstração e não expõe mais o Vite)* A senha de demonstração aparece no eco do `iniciar.bat`. `tunnel.bat` expõe o servidor de desenvolvimento do Vite com usuários de demonstração; trocar as senhas antes de usar.
 
 ## Pendências operacionais

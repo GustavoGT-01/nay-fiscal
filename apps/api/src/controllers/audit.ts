@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { RuleGroupDTO, Severity, SupplierGroupDTO } from '@nay/shared';
+import { ExportQuery, IdParam, ScopeQuery } from '../lib/query.js';
 import { ownClient } from '../middleware/auth.js';
 import * as documents from '../models/document.js';
 import * as findings from '../models/finding.js';
@@ -11,7 +12,7 @@ import { exportRows, toCsv, toXlsx } from '../services/audit-export.js';
 import { SEV_ORDER, directionWhere, periodWhere } from '../services/filters.js';
 
 export async function ruleGroups(req: FastifyRequest): Promise<RuleGroupDTO[]> {
-  const q = req.query as { clientId?: string; from?: string; to?: string; direction?: string };
+  const q = ScopeQuery.parse(req.query);
   const client = await ownClient(req, q.clientId);
   const list = await findings.listForRuleGroups({ severity: { not: 'ok' }, document: { clientId: client.id, status: { not: 'cancelada' }, ...periodWhere(q), ...directionWhere(q.direction) } });
   const rules = await ruleMap();
@@ -33,7 +34,7 @@ export async function ruleGroups(req: FastifyRequest): Promise<RuleGroupDTO[]> {
 }
 
 export async function supplierGroups(req: FastifyRequest): Promise<SupplierGroupDTO[]> {
-  const q = req.query as { clientId?: string; from?: string; to?: string; direction?: string };
+  const q = ScopeQuery.parse(req.query);
   const client = await ownClient(req, q.clientId);
   const base = { clientId: client.id, status: { not: 'cancelada' }, ...periodWhere(q) };
   // entradas agrupam por fornecedor (emitente); saidas, por cliente (destinatario)
@@ -64,22 +65,24 @@ export async function runAudit(req: FastifyRequest) {
 }
 
 export async function getRun(req: FastifyRequest) {
-  const { id } = req.params as { id: string };
+  const { id } = IdParam.parse(req.params);
   return auditRuns.findRunOfOffice(id, req.me.officeId);
 }
 
 export async function exportReport(req: FastifyRequest, reply: FastifyReply) {
-  const q = req.query as { clientId?: string; format?: string; from?: string; to?: string; direction?: string };
+  const q = ExportQuery.parse(req.query);
   const client = await ownClient(req, q.clientId);
   const rules = await ruleMap();
-  const list = await findings.listForExport({ severity: { not: 'ok' }, document: { clientId: client.id, ...periodWhere(q), ...directionWhere(q.direction) } });
+  const { rows: list, truncated } = await findings.listForExport({ severity: { not: 'ok' }, document: { clientId: client.id, ...periodWhere(q), ...directionWhere(q.direction) } });
   const rows = exportRows(list, rules);
   const base = `auditoria-${client.cnpj.replace(/\D/g, '')}`;
+  // relatorio cortado no teto: avisa por cabecalho (o front mostra) e, na planilha, dentro do arquivo
+  if (truncated) reply.header('X-Export-Truncated', String(findings.EXPORT_MAX_ROWS));
   if (q.format === 'csv') {
     return reply.header('Content-Type', 'text/csv; charset=utf-8').header('Content-Disposition', `attachment; filename="${base}.csv"`).send(toCsv(rows));
   }
   return reply
     .header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     .header('Content-Disposition', `attachment; filename="${base}.xlsx"`)
-    .send(await toXlsx(client, rows));
+    .send(await toXlsx(client, rows, truncated ? findings.EXPORT_MAX_ROWS : undefined));
 }

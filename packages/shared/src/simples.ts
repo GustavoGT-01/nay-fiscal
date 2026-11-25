@@ -27,7 +27,7 @@ export const ANEXOS: { value: Anexo; label: string }[] = [
 export function aliquotaEfetiva(anexo: Anexo, rbt12: number) {
   const tab = FAIXAS[anexo];
   const idx = tab.findIndex(([lim]) => rbt12 <= lim);
-  const [, nominal, deduzir] = tab[idx === -1 ? tab.length - 1 : idx];
+  const [, nominal, deduzir] = tab[idx === -1 ? tab.length - 1 : idx]!;
   const efetiva = rbt12 > 0 ? (rbt12 * nominal - deduzir) / rbt12 : nominal;
   return { faixa: (idx === -1 ? tab.length : idx + 1), nominal, deduzir, efetiva: Math.max(0, efetiva), acimaDoLimite: rbt12 > 4800000 };
 }

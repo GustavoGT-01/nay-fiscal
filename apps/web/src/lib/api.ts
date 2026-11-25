@@ -40,33 +40,45 @@ export function refreshSession<T = unknown>(): Promise<T | null> {
 
 export const onUnauthorized = { cb: () => {} };
 
-export async function api<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+/** Chamada autenticada que devolve a resposta inteira (cabecalhos incluidos). Renova a sessao uma vez se expirou. */
+async function request(path: string, init: RequestInit = {}, retry = true): Promise<Response> {
   const t = tokens.get();
   const headers = new Headers(init.headers);
   if (t) headers.set('Authorization', `Bearer ${t}`);
   if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json');
   const res = await fetch(path, { ...init, headers, credentials: 'same-origin' });
   if (res.status === 401 && retry && !path.startsWith('/api/auth/')) {
-    if (await refreshSession()) return api<T>(path, init, false);
+    if (await refreshSession()) return request(path, init, false);
     onUnauthorized.cb();
   }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new ApiError(res.status, body.message ?? 'Não foi possível concluir. Tente de novo.');
   }
+  return res;
+}
+
+export async function api<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+  const res = await request(path, init, retry);
   const ct = res.headers.get('content-type') ?? '';
   return (ct.includes('json') ? res.json() : res.blob()) as Promise<T>;
 }
 
-/** Baixa um arquivo autenticado. */
-export async function download(path: string, filename: string) {
-  const blob = await api<Blob>(path);
+/**
+ * Baixa um arquivo autenticado. Devolve `truncatedAt` quando o servidor avisou que cortou o arquivo
+ * (X-Export-Truncated traz o limite de linhas), para a tela dizer que o relatorio esta incompleto.
+ */
+export async function download(path: string, filename: string): Promise<{ truncatedAt: number | null }> {
+  const res = await request(path);
+  const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
+  const cut = Number(res.headers.get('x-export-truncated'));
+  return { truncatedAt: cut > 0 ? cut : null };
 }
 
 export const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });

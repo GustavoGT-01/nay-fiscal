@@ -86,11 +86,23 @@ apps/web      React + Vite, estilos portados do mockup
 packages/shared  tipos, telas/permissões e cálculo do simulador do Simples
 ```
 
-## Testes
+## Testes e qualidade
 
 ```bash
 npm test
 ```
+
+Roda a API, o front e o pacote `shared` (Vitest). Para conferir tipos e lint:
+
+```bash
+npm run typecheck
+```
+
+```bash
+npm run lint
+```
+
+O mesmo conjunto (tipos, lint, testes e build do front) roda no GitHub Actions em cada push e pull request, em Linux e Windows (`.github/workflows/ci.yml`).
 
 ## O que já funciona
 

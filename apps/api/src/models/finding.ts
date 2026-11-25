@@ -20,11 +20,19 @@ export const listForRuleGroups = (where: Prisma.FindingWhereInput) =>
     select: { ruleCode: true, severity: true, documentId: true, document: { select: { number: true } } },
   });
 
-export const listForExport = (where: Prisma.FindingWhereInput) =>
-  // sem a coluna xml (pesada) e com teto de linhas: exportar nao pode derrubar a API
-  prisma.finding.findMany({ where, include: { document: { omit: { xml: true } }, item: true }, orderBy: [{ document: { issuedAt: 'desc' } }], take: EXPORT_MAX_ROWS }).then(fromDb);
-
 export const EXPORT_MAX_ROWS = 50_000;
+
+/**
+ * Achados para o relatorio, sem a coluna xml (pesada) e com teto de linhas: exportar nao pode derrubar a API.
+ * Busca uma linha a mais so para saber se o teto cortou o relatorio, e devolve `truncated` com no maximo o teto.
+ */
+export async function listForExport(where: Prisma.FindingWhereInput, max = EXPORT_MAX_ROWS) {
+  const rows = await prisma.finding.findMany({
+    where, include: { document: { omit: { xml: true } }, item: true }, orderBy: [{ document: { issuedAt: 'desc' } }], take: max + 1,
+  });
+  const truncated = rows.length > max;
+  return { rows: fromDb(truncated ? rows.slice(0, max) : rows), truncated };
+}
 
 type NewFinding = {
   documentId: string; itemId: string | null; ruleCode: string; field: string; kind: string;

@@ -3,6 +3,7 @@ import type { UploadDTO } from '@nay/shared';
 import { ownClient } from '../middleware/auth.js';
 import * as uploads from '../models/upload.js';
 import { safeJson } from '../lib/json.js';
+import { IdParam } from '../lib/query.js';
 import { processUpload } from '../services/ingest/process-upload.js';
 import { xmlsFromZip } from '../services/ingest/zip.js';
 import { MAX_UPLOAD_TOTAL_BYTES, MAX_XML_BYTES } from '../services/ingest/limits.js';
@@ -21,6 +22,7 @@ const enqueue = (job: () => Promise<void>) => {
 
 const tooBig = (msg: string) => Object.assign(new Error(msg), { statusCode: 413 });
 // nome so para exibir: sem caminho, sem caracteres de controle, tamanho limitado
+// eslint-disable-next-line no-control-regex -- remover caracteres de controle do nome e justamente o objetivo
 const safeName = (n: string) => (n.split(/[\\/]/).pop() ?? '').replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 200) || 'arquivo';
 
 const uploadDTO = (u: uploads.UploadWithClient): UploadDTO => ({
@@ -79,6 +81,6 @@ export async function listUploads(req: FastifyRequest): Promise<UploadDTO[]> {
 }
 
 export async function getUpload(req: FastifyRequest): Promise<UploadDTO> {
-  const { id } = req.params as { id: string };
+  const { id } = IdParam.parse(req.params);
   return uploadDTO(await uploads.findOfOffice(id, req.me.officeId));
 }

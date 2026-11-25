@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { z } from 'zod';
+import { IdParam, ListNotesQuery } from '../lib/query.js';
 import type { NfseDetailDTO, NoteDetailDTO, NoteRowDTO, NoteStatus, Severity, Verdict } from '@nay/shared';
 import { ownClient } from '../middleware/auth.js';
 import * as documents from '../models/document.js';
@@ -11,12 +11,7 @@ import { loadNote } from '../services/note.js';
 import { supplierMessage } from '../services/present.js';
 
 export async function listNotes(req: FastifyRequest) {
-  const q = z.object({
-    clientId: z.string().max(100), status: z.string().max(30).optional(), q: z.string().max(200).optional(), page: z.coerce.number().int().min(0).max(100_000).default(0),
-    size: z.coerce.number().int().min(1).max(100).default(12), from: z.string().optional(), to: z.string().optional(), supplier: z.string().optional(),
-    direction: z.enum(['entrada', 'saida', 'all']).optional(), verdict: z.string().optional(),
-    model: z.string().optional(), // NFSE = so notas de servico
-  }).parse(req.query);
+  const q = ListNotesQuery.parse(req.query);
   const client = await ownClient(req, q.clientId);
   const statusWhere =
     q.status === 'problemas' ? { status: { in: ['erro', 'atencao'] } } : q.status && q.status !== 'all' ? { status: q.status } : {};
@@ -47,7 +42,7 @@ export async function listNotes(req: FastifyRequest) {
 }
 
 export async function getNote(req: FastifyRequest, reply: FastifyReply): Promise<NoteDetailDTO | void> {
-  const { id } = req.params as { id: string };
+  const { id } = IdParam.parse(req.params);
   const loaded = await loadNote(id, req.me.officeId);
   if (!loaded) return reply.code(404).send({ message: 'Nota não encontrada.' });
   const { doc: d, checks: compact } = loaded;
