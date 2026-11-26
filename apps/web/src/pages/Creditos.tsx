@@ -79,7 +79,7 @@ export function Creditos() {
             <div className="table-wrap">
               {q.isLoading ? <div className="skel" style={{ height: 240, margin: 16 }} /> : (
                 <table className="table static">
-                  <thead><tr><th>{group === 'forn' ? 'Fornecedor' : 'Mês'}</th><th className="r">Notas</th><th className="r">IBS</th><th className="r">CBS</th><th>Situação do crédito</th></tr></thead>
+                  <thead><tr><th scope="col">{group === 'forn' ? 'Fornecedor' : 'Mês'}</th><th scope="col" className="r">Notas</th><th scope="col" className="r">IBS</th><th scope="col" className="r">CBS</th><th scope="col">Situação do crédito</th></tr></thead>
                   <tbody>
                     {d?.rows.map((r) => (
                       <tr key={r.key}>

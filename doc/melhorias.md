@@ -38,6 +38,11 @@ Levantamento feito em 11/11/2026, após a reorganização em MVC. Cada item cita
 - ✅ *(26/11/2026)* Nota autorizada protegida contra sobrescrita, rotação de sessão com detecção de reuso, "Sair de todos os aparelhos", bloqueio de login no banco, senha provisória imposta pela API, dados reduzidos por perfil, consultas `Unscoped`, `Upload.officeId` obrigatório e `vitest` 4. Detalhes em `doc/auditoria-seguranca.md`.
 - Falta: conferir a assinatura XMLDSig (decisão: ficou na proteção mínima), tela para ver o histórico (`DocumentEvent`) e o aviso `effect`/`prisma` do `npm audit`. O item de assinatura de código do app desktop saiu junto com o app.
 
+## Design e acessibilidade (fase 7)
+
+- ✅ *(26/11/2026)* Tokens gerados do mockup (uma fonte só); cores do login e do Início em variáveis; 60 ícones em vez de todo o pacote (CSS de 322 para 72 KB, fontes publicadas de 40 para 8 arquivos); telas baixadas sob demanda (JavaScript inicial de 445 para 369 KB); anel, contador, medidor, paginação, linha clicável e "copiar" num lugar só; Início dividido em partes; linhas abrem com Espaço; `scope` nas tabelas; "Pular para o conteúdo"; menus com setas e Esc; cartão de cliente sem botão dentro de botão; "copiar" só avisa que copiou quando copiou; a gaveta não fecha mais o que foi aberto quando a nota é relida; rótulo do passo atual no Simulador pelo celular.
+- Falta: os quatro controles segmentados continuam separados (o do Início tem desenho próprio); mockups de login e Início não existem em `design/`; checagem de contraste e leitor de tela não foi feita. O app desktop saiu do projeto, então os itens dele não se aplicam.
+
 ## Pendências operacionais
 
 - `graphify-out/` segue fora do git (não rastreado). Decidir entre ignorar tudo ou versionar `graph.json` e `GRAPH_REPORT.md`.

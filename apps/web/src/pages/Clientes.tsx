@@ -6,6 +6,7 @@ import { useSession } from '../lib/session';
 import { EmptyState, Ring, ringColor, useToast } from '../lib/ui';
 import { api, fmtCnpj, initials } from '../lib/api';
 import { ClientForm } from '../components/ClientForm';
+import { refreshData } from '../lib/queries';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
 export function Clientes() {
@@ -29,7 +30,7 @@ export function Clientes() {
       const r = await api<{ notes: number }>(`/api/clients/${del.id}`, { method: 'DELETE', body: JSON.stringify({ confirm: 'APAGAR' }) });
       toast(`${del.name} excluído, com ${r.notes} nota(s)`, 'ti-trash');
       setDel(null);
-      await qc.invalidateQueries();
+      await refreshData(qc);
     } catch (e) {
       toast((e as Error).message, 'ti-alert-triangle');
     } finally {
@@ -62,17 +63,17 @@ export function Clientes() {
       ) : (
         <div className="clients">
           {clients.map((c) => (
-            <div key={c.id} className="ccard" role="button" tabIndex={0} onClick={() => pick(c)} onKeyDown={(e) => e.key === 'Enter' && pick(c)} aria-label={`Trabalhar com ${c.name}`}>
+            <div key={c.id} className="ccard">
               <div className="top2">
                 <span className="av" style={{ width: 38, height: 38, borderRadius: 12, background: 'var(--uva-soft)', color: 'var(--uva)', display: 'grid', placeItems: 'center', fontWeight: 600 }}>{initials(c.name)}</span>
                 {c.conformity === null ? <Ring pct={0} color="var(--line)" /> : <Ring pct={c.conformity} color={ringColor(c.conformity)} />}
               </div>
-              <h3>{c.name}</h3>
+              <h3><button type="button" className="ccard-pick" aria-label={`Trabalhar com ${c.name}`} onClick={() => pick(c)}>{c.name}</button></h3>
               <p>CNPJ {fmtCnpj(c.cnpj)}</p>
               <p>{regimeLabel(c.regime)}{c.city ? ` · ${c.city}${c.uf ? '/' + c.uf : ''}` : ''}{c.establishments.length > 1 ? ` · ${c.establishments.length} estabelecimentos` : ''}</p>
               <p>{c.conformity === null ? 'Sem notas ainda' : `${c.totalNotes} notas, ${c.conformity}% em conformidade`}</p>
               {(canEdit || canDelete) && (
-                <div className="ccard-acts" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                <div className="ccard-acts">
                   {canEdit && <button className="btn" onClick={() => setForm({ open: true, client: c })}><i className="ti ti-pencil" />Editar</button>}
                   {canDelete && <button className="btn danger-ghost" onClick={() => setDel(c)}><i className="ti ti-trash" />Excluir</button>}
                 </div>
@@ -89,7 +90,7 @@ export function Clientes() {
         onSaved={(id, name) => {
           const isNew = !form.client;
           closeForm();
-          qc.invalidateQueries();
+          void refreshData(qc);
           toast(isNew ? `${name} cadastrado` : 'Cliente atualizado', 'ti-circle-check');
           if (isNew && id) setClientId(id);
         }}

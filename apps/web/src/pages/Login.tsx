@@ -122,13 +122,15 @@ export function Login() {
                 </p>
               )}
 
-              <button type="submit" className={busy ? 'nf-btn busy' : 'nf-btn'} disabled={busy} aria-live="polite">
+              <button type="submit" className={busy ? 'nf-btn busy' : 'nf-btn'} disabled={busy} aria-busy={busy}>
                 {busy ? (
                   <><span className="nf-spinner" aria-hidden="true" />Entrando…</>
                 ) : (
                   <>Entrar<svg className="nf-arrow" strokeWidth={2.2} {...svgProps}><path d="M5 12h14M13 6l6 6-6 6" /></svg></>
                 )}
               </button>
+
+              <span className="sr-only" role="status">{busy ? 'Entrando…' : ''}</span>
 
               {/* senhas de demonstracao so aparecem na propria maquina, nunca pelo tunel */}
               {demo && (

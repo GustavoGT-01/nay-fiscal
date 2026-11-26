@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { dataBR, REFORMA, SCREENS } from '@nay/shared';
 import { initials } from '../lib/api';
@@ -8,6 +8,7 @@ import { useDashboard } from '../hooks/useDashboard';
 import { useMarkNotificationsRead, useNotifications } from '../hooks/useNotifications';
 import { CommandPalette } from './CommandPalette';
 import { ErrorBoundary } from './ErrorBoundary';
+import { Menu } from '../lib/widgets';
 
 const BELL_ICON: Record<string, string> = { DADOS_APAGADOS: 'ti-trash', CLIENT_DELETED: 'ti-building-store', NOTAS_ALTERADAS: 'ti-file-alert' };
 
@@ -57,6 +58,7 @@ export function Shell() {
 
   return (
     <div className="app">
+      <a className="skip" href="#conteudo" onClick={(e) => { e.preventDefault(); document.getElementById('conteudo')?.focus(); }}>Pular para o conteúdo</a>
       <nav className={'side' + (sideOpen ? ' open' : '')} aria-label="Menu principal">
         <div className="brand"><div className="brand-mark"><span>N</span></div><b>Nay Fiscal</b></div>
         {screens.filter((s) => s.group === 'main').map((s) => (
@@ -72,7 +74,7 @@ export function Shell() {
         <div className="side-foot"><b>Fase de teste da Reforma</b>Grupo IBS/CBS obrigatório nas NF-e emitidas desde {dataBR(REFORMA.grupoObrigatorioDesde)}.</div>
       </nav>
 
-      <main className="main">
+      <main className="main" id="conteudo" tabIndex={-1}>
         <header className="top" ref={menuRef}>
           <button className="icon-btn burger" aria-label="Abrir menu" onClick={(e) => { e.stopPropagation(); setSideOpen((x) => !x); }}><i className="ti ti-menu-2" /></button>
           <div style={{ position: 'relative' }}>
@@ -81,13 +83,13 @@ export function Shell() {
               <span><small>Cliente</small><strong>{client?.name ?? 'Nenhum cliente'}</strong></span>
               <i className="ti ti-selector" style={{ color: 'var(--muted)' }} />
             </button>
-            <div className={'menu' + (menuOpen ? ' open' : '')} role="menu">
+            <Menu open={menuOpen} onClose={() => setMenuOpen(false)} label="Clientes">
               {clients.map((c) => (
                 <button key={c.id} role="menuitem" onClick={() => { setClientId(c.id); setMenuOpen(false); toast('Trabalhando agora com ' + c.name, 'ti-building-store'); }}>
                   <span>{c.name}</span><span>{c.conformity === null ? 'sem notas' : `${c.conformity}% conforme`}</span>
                 </button>
               ))}
-            </div>
+            </Menu>
           </div>
           <button className="search" onClick={() => setCmdOpen(true)}><i className="ti ti-search" /><span>Buscar nota, regra ou tela</span><kbd>Ctrl K</kbd></button>
           <button className="icon-btn" aria-label="Alternar tema" onClick={toggleTheme}><i className={'ti ' + (theme === 'dark' ? 'ti-sun' : 'ti-moon')} /></button>
@@ -118,16 +120,16 @@ export function Shell() {
           </div>
           <div style={{ position: 'relative' }}>
             <button className="me" style={{ border: 0, cursor: 'pointer' }} aria-label={user?.name} onClick={() => setUserOpen((x) => !x)}>{user ? initials(user.name) || user.name.slice(0, 2).toUpperCase() : ''}</button>
-            <div className={'menu' + (userOpen ? ' open' : '')} role="menu" style={{ left: 'auto', right: 0 }}>
+            <Menu open={userOpen} onClose={() => setUserOpen(false)} label="Sua conta" style={{ left: 'auto', right: 0 }}>
               <button role="menuitem" disabled style={{ cursor: 'default' }}><span>{user?.name}</span><span>{user?.role === 'ANALISTA' ? 'Analista' : 'Administrador'}</span></button>
               <button role="menuitem" onClick={() => nav('/ajuda')}><span>Ajuda</span><span /></button>
               <button role="menuitem" onClick={() => nav('/senha')}><span>Trocar senha</span><span /></button>
               <button role="menuitem" onClick={logout}><span>Sair</span><span /></button>
               <button role="menuitem" onClick={() => { setUserOpen(false); logoutAll().catch(() => toast('Não foi possível encerrar as sessões. Tente de novo.', 'ti-alert-triangle')); }}><span>Sair de todos os aparelhos</span><span /></button>
-            </div>
+            </Menu>
           </div>
         </header>
-        <ErrorBoundary key={loc.pathname}><Outlet /></ErrorBoundary>
+        <ErrorBoundary key={loc.pathname}><Suspense fallback={<section className="view on"><div className="skel" style={{ height: 320 }} /></section>}><Outlet /></Suspense></ErrorBoundary>
       </main>
       <nav className="tabbar" aria-label="Navegação">
         {screens.filter((x) => ['inicio', 'notas', 'importar', 'auditoria'].includes(x.key)).map((x) => (

@@ -1,0 +1,70 @@
+/* GERADO por scripts/gerar-estilos.mjs a partir de @tabler/icons-webfont (licenca MIT) e dos icones citados no codigo. Nao edite aqui: mude a origem e rode `npm run estilos -w @nay/web`. */
+@font-face{font-family:"tabler-icons";font-style:normal;font-weight:400;src:url("../../../../node_modules/@tabler/icons-webfont/dist/fonts/tabler-icons.core.woff2") format("woff2");unicode-range:U+20,U+EA03,U+EA05-EA06,U+EA0B,U+EA19-EA1D,U+EA1F,U+EA24,U+EA28,U+EA2C,U+EA35,U+EA38-EA3A,U+EA45-EA46,U+EA4E-EA4F,U+EA51-EA55,U+EA59,U+EA5C,U+EA5E-EA62,U+EA67,U+EA69-EA6D,U+EA70,U+EA75-EA77,U+EA79-EA7A,U+EA84,U+EA87-EA8A,U+EA94-EA9A,U+EA9C-EA9D,U+EAA2,U+EAA4-EAA6,U+EAAD,U+EABD-EAC1,U+EAC3,U+EAC5,U+EAC7,U+EADA,U+EADE,U+EAE2,U+EAE4-EAE5,U+EAE7-EAE9,U+EAEC-EAF0,U+EAF2,U+EAF7-EAF8,U+EAFC-EAFD,U+EAFF,U+EB01-EB02,U+EB04-EB05,U+EB09-EB0C,U+EB0E,U+EB10-EB11,U+EB13,U+EB17,U+EB1C-EB1E,U+EB20-EB22,U+EB24-EB25,U+EB28,U+EB2C,U+EB2E,U+EB30,U+EB3C-EB3D,U+EB40-EB41,U+EB43,U+EB45,U+EB47,U+EB49,U+EB4B,U+EB4D,U+EB51-EB52,U+EB54-EB55,U+EB5C-EB5D,U+EB62,U+EB64-EB65,U+EB67-EB68,U+EB6A-EB6C,U+EB6E,U+EB72,U+EB75,U+EB77,U+EB80,U+EB82,U+EB84,U+EB90,U+EB9D,U+EBA1,U+EBA6,U+EBA8,U+EBAA,U+EBB6,U+EBBB-EBBC,U+EBBE,U+EBC2,U+EBC4,U+EBE2-EBE3,U+EBEA,U+EBF2,U+EBF6,U+EC01,U+EC16-EC17,U+EC1A,U+EC1C,U+EC1F-EC20,U+EC26,U+EC2C,U+EC2E,U+EC38-EC39,U+EC42,U+EC45,U+EC4B,U+EC73-EC74,U+EC8C,U+EC90-EC91,U+EC9C-EC9D,U+ECA3,U+ECDE,U+ECEF-ECF0,U+ECF7,U+ED07,U+ED12,U+ED22,U+ED45-ED46,U+ED4A,U+ED4F,U+ED51,U+ED58,U+ED61,U+ED76,U+EDBA,U+EDBE,U+EDEF,U+EDFD,U+EDFF,U+EE21,U+EE25,U+EEA9,U+EEC2,U+EECB,U+EECD,U+EEF7,U+EEFF,U+EF40,U+EF4F,U+EF68,U+EF88-EF89,U+EF8E,U+EF90,U+EFBE,U+EFC5,U+EFE6,U+EFF0,U+EFF2,U+EFF9,U+F004-F005,U+F00B,U+F021,U+F028,U+F02C,U+F074,U+F082,U+F089,U+F0F3,U+F1D2,U+F1E2,U+F1F6,U+F1F8,U+F226,U+F236,U+F265,U+F2B8,U+F2C9,U+F318-F319,U+F358,U+F38A,U+F38C,U+F38F,U+F3AE,U+F51A,U+F59F,U+F5AC,U+F5F8,U+F634-F635,U+F63D,U+F65C-F65D,U+F6D7,U+F7BD,U+F7D0,U+F810,U+F824,U+F91D,U+F9D4,U+FA21,U+FA77,U+FA7E,U+FAF7,U+FAFD,U+FB03,U+FB10,U+FB1B,U+FC0F,U+FCAF,U+FD2E-FD30,U+FD32,U+FDAA,U+FEB8,U+FEF7,U+FEFB,U+FF11,U+FF40,U+FF9B,U+10066,U+10096,U+100B2,U+1014B,U+101A6,U+1025A-1025B,U+10261,U+10289}
+@font-face{font-family:"tabler-icons";font-style:normal;font-weight:400;src:url("../../../../node_modules/@tabler/icons-webfont/dist/fonts/tabler-icons.arrows-1.woff2") format("woff2");unicode-range:U+EA0C-EA18,U+EA1E,U+EA20-EA23,U+EA25-EA27,U+EA29,U+EA63-EA66,U+EA7C-EA83,U+EB15-EB16,U+EB31-EB33,U+EB42,U+EB59-EB5B,U+EB5E-EB60,U+EB78,U+EBA7,U+EBB4-EBB5,U+EC15,U+EC88-EC8B,U+EC9E,U+ECE0-ECE1,U+ED09-ED10,U+ED3C-ED3D,U+ED54-ED57,U+ED98,U+ED9A-EDA4,U+EDA6-EDB7,U+EDBF-EDC4,U+EDDA-EDE1,U+EE00-EE03,U+EE48-EE4F,U+EF31-EF39,U+EF45-EF46,U+EF85,U+EFBF,U+EFE5,U+EFE8-EFEF,U+EFFE-F000,U+F044-F048}
+@font-face{font-family:"tabler-icons";font-style:normal;font-weight:400;src:url("../../../../node_modules/@tabler/icons-webfont/dist/fonts/tabler-icons.document.woff2") format("woff2");unicode-range:U+EA6E-EA6F,U+EA9E-EAA1,U+EAA3,U+EAAA-EAAC,U+EAAE,U+EB6D,U+EB70,U+EB96,U+EBB0,U+EBC0,U+EBD0,U+EC81,U+ECDC,U+ECED,U+ECF1-ECF2,U+ED08,U+ED14,U+ED2A-ED2B,U+ED4D-ED4E,U+ED53,U+ED5D,U+ED7B,U+EDBD,U+EDE6-EDEA,U+EDEC-EDEE,U+EDFA-EDFC,U+EEC3,U+EECC,U+EECE,U+EF54-EF55,U+EF84,U+EFA8,U+EFB2,U+EFE0-EFE1,U+F029,U+F032-F043,U+F070-F071,U+F073,U+F0AD,U+F0BC-F0BE,U+F0CB-F0CC,U+F0CE,U+F133,U+F153,U+F167,U+F169-F16A,U+F183,U+F18F,U+F1B2,U+F299,U+F2A1,U+F2D7-F2DA,U+F34D-F34F,U+F3BF,U+F3D1,U+F415,U+F501-F503,U+F53D-F540,U+F563,U+F5AA-F5AB,U+F90C-F91C,U+FA27,U+FA5A,U+FA5E-FA61,U+FB07-FB0F,U+FB11-FB1A,U+FB1C-FB1D,U+FC8A,U+FD22-FD24,U+FD43,U+FD67,U+FD9A,U+FEAB-FEAC,U+FEF2-FEF3,U+FFA0-FFA1,U+FFB8-FFB9,U+10098,U+100F2,U+1029B-1029C,U+102B0-102B1,U+102BA-102BB,U+102D6,U+102D8}
+@font-face{font-family:"tabler-icons";font-style:normal;font-weight:400;src:url("../../../../node_modules/@tabler/icons-webfont/dist/fonts/tabler-icons.system-1.woff2") format("woff2");unicode-range:U+EA04,U+EA2E,U+EA71,U+EA91-EA93,U+EA9B,U+EAB0-EAB1,U+EABA,U+EAC4,U+EAC6,U+EADC-EADD,U+EAE1,U+EAE6,U+EAEB,U+EAFE,U+EB12,U+EB23,U+EB3A-EB3B,U+EB3E-EB3F,U+EB48,U+EB4A,U+EB4C,U+EB53,U+EBB9-EBBA,U+EBC1,U+EBC6-EBC8,U+EBCB,U+EBD1,U+EBD4-EBD5,U+EBD7,U+EBDC,U+EBE7,U+EBEC,U+EBF1,U+EBFA-EBFB,U+EC00,U+EC12,U+EC37,U+EC3E,U+EC77,U+EC9F,U+ECA2,U+ECBF,U+ECC6,U+ECD3-ECD5,U+ECD7,U+ECDA,U+ECE9,U+ECF8-ECF9,U+ED19,U+ED1E,U+ED2C,U+ED38,U+ED62,U+ED65,U+ED84,U+EDE2-EDE5,U+EE1F-EE20,U+EE41,U+EE71,U+EE88,U+EEAA,U+EEAE,U+EEB4,U+EEC4,U+EECA,U+EED6,U+EF4C-EF4E,U+EF51,U+EF53,U+EF56,U+EF93,U+EF9A-EF9B,U+EFA7,U+EFAD,U+EFAF,U+EFB3-EFB4,U+EFB6,U+EFB9-EFBB,U+EFBD,U+EFC9,U+EFCF,U+EFD3,U+EFDA-EFDB,U+EFDF,U+EFE2,U+EFF1,U+EFF7,U+F008,U+F00C,U+F020,U+F023,U+F02A,U+F031,U+F068,U+F076,U+F079,U+F07D,U+F092-F093,U+F099,U+F09C,U+F0A4,U+F0A8-F0A9,U+F0B3,U+F0CF,U+F10A,U+F10F,U+F11B,U+F123-F125,U+F12A,U+F136,U+F138,U+F146-F147,U+F149-F14A,U+F14C,U+F154,U+F156,U+F158,U+F15D,U+F16B,U+F181,U+F185,U+F18B,U+F192,U+F198-F199,U+F19C,U+F19F,U+F1A1,U+F1A9,U+F1AE,U+F1B1,U+F1B4,U+F1BB,U+F1C1,U+F1C5-F1C6,U+F1F1-F1F2,U+F1F7,U+F1FB-F1FC,U+F1FF,U+F21F-F223,U+F227-F228,U+F249-F24B,U+F256,U+F258,U+F26E,U+F286,U+F288,U+F294,U+F2DD,U+F313-F317,U+F31A-F31E,U+F359,U+F368,U+F37E,U+F38E,U+F3A3,U+F3B0,U+F3B3,U+F3B5,U+F3BA,U+F3C1,U+F3E1-F3E2,U+F3E5,U+F3E8,U+F3EA,U+F3F4,U+F3F8,U+F3FB,U+F3FD,U+F401,U+F404,U+F422,U+F42C,U+F42E-F430,U+F436-F437,U+F43A,U+F440,U+F4A5,U+F4CA-F4CB,U+F50B,U+F513,U+F51B,U+F526-F527}
+@font-face{font-family:"tabler-icons";font-style:normal;font-weight:400;src:url("../../../../node_modules/@tabler/icons-webfont/dist/fonts/tabler-icons.system-2.woff2") format("woff2");unicode-range:U+F528-F52F,U+F546-F54B,U+F551,U+F566,U+F577,U+F581,U+F588-F589,U+F5E6-F5E7,U+F5F5,U+F61B-F61C,U+F621,U+F62F-F632,U+F636,U+F793-F794,U+F79D-F79E,U+F7A8-F7AB,U+F7BE-F7BF,U+F7C1-F7CF,U+F7D1-F7D2,U+F7EC-F7F1,U+F7FB-F80F,U+F811-F823,U+F825-F832,U+F844-F84A,U+F91E-F936,U+F999-F9D3,U+F9D5-F9D8,U+F9F3-F9F7,U+F9FE-FA04,U+FA07-FA0F,U+FA33,U+FAD2,U+FAD4-FAD5}
+@font-face{font-family:"tabler-icons";font-style:normal;font-weight:400;src:url("../../../../node_modules/@tabler/icons-webfont/dist/fonts/tabler-icons.development.woff2") format("woff2");unicode-range:U+EA48,U+EB0F,U+EBEF,U+EC36,U+ECA0,U+ED52,U+EFFC-EFFD,U+F01E,U+F07A-F07B,U+F0AB-F0AC,U+F0C3,U+F0F8,U+F1A6,U+F1C0,U+F1CE,U+F24D,U+F26B,U+F3AF,U+F3C0,U+F43D,U+F4A2,U+F553,U+F662-F666,U+FC54,U+FEA7,U+FEE7,U+101E8,U+101EA-101F1,U+101F3-101F9,U+101FF-10200,U+1020B,U+10225,U+10267,U+10280-10282,U+1028C-1028D,U+102A6,U+102C7,U+102CC,U+102DB-102DC}
+@font-face{font-family:"tabler-icons";font-style:normal;font-weight:400;src:url("../../../../node_modules/@tabler/icons-webfont/dist/fonts/tabler-icons.map.woff2") format("woff2");unicode-range:U+EA8E,U+EAB9,U+EAE0,U+EB03,U+EB35,U+EB4E,U+EB56-EB57,U+EB76,U+EC08,U+EC0F-EC10,U+EC2F,U+EC4D,U+EC6B,U+ECA4-ECA6,U+ECDD,U+ECF3,U+ED2E-ED2F,U+ED39,U+ED5E-ED60,U+ED7A,U+ED7D,U+ED85,U+EDEB,U+EE8C-EE8D,U+EE90,U+EEC1,U+EED3,U+EEFB,U+EF01,U+EF09-EF0A,U+EF3D,U+EF79,U+EF82,U+EF8A-EF8B,U+F014,U+F016-F018,U+F06A-F06D,U+F07F-F080,U+F09B,U+F0B7,U+F0D5,U+F0F7,U+F100,U+F10E,U+F116,U+F12C-F12D,U+F134,U+F139,U+F155,U+F15C,U+F160,U+F172,U+F174,U+F17B,U+F191,U+F193-F194,U+F197,U+F19A,U+F1AD,U+F1B5-F1B6,U+F1B8-F1B9,U+F1C2,U+F1C8,U+F1CA,U+F1DC-F1DE,U+F263,U+F295,U+F2A7,U+F2C4,U+F2C8,U+F3A9,U+F3EC,U+F408,U+F413,U+F41C,U+F41F,U+F435,U+F4B6,U+F57F-F580,U+F5A7,U+F795,U+F79B-F79C,U+F94A-F95B,U+F9D9-F9EB,U+FAE8,U+FAEC,U+FB01,U+FB04-FB06,U+FB8A-FB8E,U+FB90-FB9D,U+FBAF-FBB3,U+FBB5-FBD4,U+FBE9-FBFC,U+FC48,U+FC5D-FC60,U+FC79,U+FCA9-FCAE,U+FCBA-FCBD,U+FEB4,U+FED6,U+FFB7,U+101E9,U+10202-10203,U+10227,U+10298,U+102C8,U+102CD,U+102D7,U+102E7-102E8}
+@font-face{font-family:"tabler-icons";font-style:normal;font-weight:400;src:url("../../../../node_modules/@tabler/icons-webfont/dist/fonts/tabler-icons.charts.woff2") format("woff2");unicode-range:U+EA57-EA58,U+EA5A-EA5B,U+EA5D,U+EC75,U+ED77,U+EE27-EE33,U+F097-F098,U+F381,U+F3D2-F3D3,U+F4C2,U+F618-F619,U+FD92-FD93,U+FEF5-FEF6,U+FFA4-FFA5,U+101FB}
+.ti{font-family:"tabler-icons" !important;speak:none;font-style:normal;font-weight:normal;font-variant:normal;text-transform:none;line-height:1;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+.ti-adjustments-horizontal:before{content:"\ec38"}
+.ti-alert-circle:before{content:"\ea05"}
+.ti-alert-triangle:before{content:"\ea06"}
+.ti-arrow-down:before{content:"\ea16"}
+.ti-arrow-left:before{content:"\ea19"}
+.ti-arrow-narrow-right:before{content:"\ea1c"}
+.ti-arrow-right:before{content:"\ea1f"}
+.ti-arrow-up:before{content:"\ea25"}
+.ti-arrows-sort:before{content:"\eb5a"}
+.ti-ban:before{content:"\ea2e"}
+.ti-bell:before{content:"\ea35"}
+.ti-bug:before{content:"\ea48"}
+.ti-building-store:before{content:"\ea4e"}
+.ti-chart-donut:before{content:"\ea5b"}
+.ti-check:before{content:"\ea5e"}
+.ti-checks:before{content:"\ebaa"}
+.ti-chevron-down:before{content:"\ea5f"}
+.ti-chevron-left:before{content:"\ea60"}
+.ti-chevron-right:before{content:"\ea61"}
+.ti-circle-check:before{content:"\ea67"}
+.ti-cloud-upload:before{content:"\ea75"}
+.ti-code:before{content:"\ea77"}
+.ti-coins:before{content:"\f65d"}
+.ti-copy:before{content:"\ea7a"}
+.ti-download:before{content:"\ea96"}
+.ti-eye:before{content:"\ea9a"}
+.ti-file-alert:before{content:"\ede6"}
+.ti-file-code:before{content:"\ebd0"}
+.ti-file-invoice:before{content:"\eb67"}
+.ti-file-text:before{content:"\eaa2"}
+.ti-file-upload:before{content:"\ec91"}
+.ti-file-zip:before{content:"\ed4e"}
+.ti-info-circle:before{content:"\eac5"}
+.ti-lifebuoy:before{content:"\eadd"}
+.ti-loader-2:before{content:"\f226"}
+.ti-lock:before{content:"\eae2"}
+.ti-lock-check:before{content:"\f926"}
+.ti-map-off:before{content:"\f15c"}
+.ti-menu-2:before{content:"\ec42"}
+.ti-moon:before{content:"\eaf8"}
+.ti-pencil:before{content:"\eb04"}
+.ti-player-play:before{content:"\ed46"}
+.ti-plus:before{content:"\eb0b"}
+.ti-printer:before{content:"\eb0e"}
+.ti-receipt:before{content:"\edfd"}
+.ti-refresh:before{content:"\eb13"}
+.ti-refresh-alert:before{content:"\ed57"}
+.ti-scale:before{content:"\ebc2"}
+.ti-search:before{content:"\eb1c"}
+.ti-selector:before{content:"\eb1d"}
+.ti-send:before{content:"\eb1e"}
+.ti-shield-check:before{content:"\eb22"}
+.ti-smart-home:before{content:"\ecde"}
+.ti-sparkles:before{content:"\f6d7"}
+.ti-sun:before{content:"\eb30"}
+.ti-tool:before{content:"\eb40"}
+.ti-trash:before{content:"\eb41"}
+.ti-user-check:before{content:"\eb49"}
+.ti-user-plus:before{content:"\eb4b"}
+.ti-x:before{content:"\eb55"}

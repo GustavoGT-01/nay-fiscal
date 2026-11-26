@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FindingDTO, NoteDetailDTO } from '@nay/shared';
-import { useToast } from '../../lib/ui';
+import { useCopy } from '../../lib/widgets';
 import { actionLabel } from '../../lib/verdict';
 
 function XmlView({ snippet, highlight }: { snippet: string; highlight: string | null }) {
@@ -24,7 +24,7 @@ function XmlView({ snippet, highlight }: { snippet: string; highlight: string | 
 }
 
 export function Finding({ f, open, onToggle, note }: { f: FindingDTO; open: boolean; onToggle: () => void; note: NoteDetailDTO }) {
-  const toast = useToast();
+  const copy = useCopy();
   const [showXml, setShowXml] = useState(false);
   const sev = f.severity === 'a_verificar' ? 'atencao' : f.severity;
   const ic = { erro: 'ti-alert-triangle', atencao: 'ti-alert-circle', ok: 'ti-circle-check' }[sev];
@@ -37,8 +37,7 @@ export function Finding({ f, open, onToggle, note }: { f: FindingDTO; open: bool
   }
   const parecer = () => {
     const txt = `NF-e ${note.number}: ${f.title}. O que aconteceu: ${f.what} Por que importa: ${f.why} Como corrigir: ${f.how} Base: ${f.legalBasis}.`;
-    navigator.clipboard?.writeText(txt);
-    toast('Parecer copiado');
+    void copy(txt, 'Parecer copiado');
   };
   return (
     <div className={`finding ${sev}${open ? ' open' : ''}`}>
@@ -64,7 +63,7 @@ export function Finding({ f, open, onToggle, note }: { f: FindingDTO; open: bool
         {f.fixTag && (
           <div className="code" style={{ marginTop: 12 }}>
             <span>Corrigir: <span className="add">{f.fixTag}</span></span>
-            <button className="btn" style={{ padding: '5px 10px', fontSize: 12 }} onClick={() => { navigator.clipboard?.writeText(f.fixTag!); toast('Correção copiada'); }}>
+            <button className="btn" style={{ padding: '5px 10px', fontSize: 12 }} onClick={() => void copy(f.fixTag!, 'Correção copiada')}>
               <i className="ti ti-copy" />Copiar
             </button>
           </div>

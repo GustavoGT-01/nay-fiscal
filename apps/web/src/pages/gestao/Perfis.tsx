@@ -49,7 +49,7 @@ export function Perfis() {
         {canEdit && <div className="toolbar" style={{ marginTop: 0 }}><button className="btn primary" onClick={() => open('new')}><i className="ti ti-plus" />Novo perfil</button></div>}
         <div className="table-wrap">
           <table className="table static">
-            <thead><tr><th>Perfil</th><th>Libera</th><th className="r">Usuários</th>{canEdit && <th aria-label="Ações" />}</tr></thead>
+            <thead><tr><th scope="col">Perfil</th><th scope="col">Libera</th><th scope="col" className="r">Usuários</th>{canEdit && <th scope="col" aria-label="Ações" />}</tr></thead>
             <tbody>
               {profiles.isPending && <tr><td colSpan={4}><div className="skel" style={{ height: 18 }} /></td></tr>}
               {profiles.isError && <tr><td colSpan={4} className="hint">Não foi possível carregar os perfis.</td></tr>}

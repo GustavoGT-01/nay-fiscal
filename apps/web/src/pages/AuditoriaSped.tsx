@@ -4,6 +4,7 @@ import type { SpedFileDTO, SpedKind } from '@nay/shared';
 import { useSession } from '../lib/session';
 import { EmptyState, QueryError, Seg } from '../lib/ui';
 import { useOpenNote } from '../components/note-drawer';
+import { Pager, rowProps } from '../lib/widgets';
 import { SPED_PER_PAGE, useSpedDetail, useSpedFiles } from '../hooks/useSped';
 
 type Filter = SpedKind | '';
@@ -81,11 +82,10 @@ export function AuditoriaSped() {
       <div className="table-wrap">
         {detail.isLoading ? <div className="skel" style={{ height: 200, margin: 16 }} /> : detail.isError ? <QueryError error={detail.error} onRetry={() => detail.refetch()} what="as divergências" /> : (
           <table className="table">
-            <thead><tr><th>Nota</th><th>Divergência</th><th>No SPED</th><th>No XML</th></tr></thead>
+            <thead><tr><th scope="col">Nota</th><th scope="col">Divergência</th><th scope="col">No SPED</th><th scope="col">No XML</th></tr></thead>
             <tbody>
               {d?.rows.map((r) => (
-                <tr key={r.id} tabIndex={r.documentId ? 0 : undefined} style={r.documentId ? undefined : { cursor: 'default' }}
-                  onClick={() => r.documentId && openNote(r.documentId)} onKeyDown={(e) => e.key === 'Enter' && r.documentId && openNote(r.documentId)}>
+                <tr key={r.id} {...(r.documentId ? rowProps(() => openNote(r.documentId!)) : { style: { cursor: 'default' } })}>
                   <td className="mono">{r.number || r.key.slice(25, 34)}</td>
                   <td><span className={'tag ' + KIND[r.kind].cls}>{KIND[r.kind].label}</span></td>
                   <td>{r.sped}</td>
@@ -96,13 +96,7 @@ export function AuditoriaSped() {
             </tbody>
           </table>
         )}
-        <div className="pager">
-          <span>{total} {total === 1 ? 'divergência' : 'divergências'}, página {page + 1} de {pages}</span>
-          <span style={{ display: 'flex', gap: 6 }}>
-            <button className="btn" aria-label="Página anterior" onClick={() => setPage((p) => Math.max(0, p - 1))}><i className="ti ti-chevron-left" /></button>
-            <button className="btn" aria-label="Próxima página" onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}><i className="ti ti-chevron-right" /></button>
-          </span>
-        </div>
+        <Pager summary={`${total} ${total === 1 ? 'divergência' : 'divergências'}`} page={page} pages={pages} onPage={setPage} />
       </div>
       {d?.truncated && <p className="hint" style={{ marginTop: 12 }}>O arquivo tem {current.divergenceCount.toLocaleString('pt-BR')} divergências; só as primeiras são guardadas e mostradas aqui.</p>}
       <p className="hint" style={{ marginTop: 12 }}>Clique numa linha para abrir a nota. Notas emitidas fora do período do arquivo não entram como "fora do SPED": confira se foram escrituradas em outro mês.</p>

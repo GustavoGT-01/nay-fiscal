@@ -4,6 +4,7 @@ import type { NoteRowDTO } from '@nay/shared';
 import { brl, fmtCnpj, fmtDate } from '../lib/api';
 import { useSession } from '../lib/session';
 import { QueryError, Seg, StatusTag, useToast } from '../lib/ui';
+import { Pager, rowProps } from '../lib/widgets';
 import { printNote } from '../lib/print';
 import { docName, useOpenNote } from '../components/note-drawer';
 import { DirectionSeg, useDirection } from '../lib/direction';
@@ -22,10 +23,10 @@ const dm = (iso: string) => iso.slice(8, 10) + '/' + iso.slice(5, 7);
 
 /** Cabecalho que ordena ao clique. Sem `sort`, e texto simples (a tabela tambem serve a telas sem ordenacao). */
 function Th({ k, sort, onSort, children, className }: { k: SortKey; sort?: SortState; onSort?: (k: SortKey) => void; children: string; className?: string }) {
-  if (!sort || !onSort) return <th className={className}>{children}</th>;
+  if (!sort || !onSort) return <th scope="col" className={className}>{children}</th>;
   const on = sort.by === k;
   return (
-    <th className={className} aria-sort={on ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none'}>
+    <th scope="col" className={className} aria-sort={on ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none'}>
       <button type="button" className="th-sort" onClick={() => onSort(k)}>
         {children}<i className={'ti ' + (on ? (sort.order === 'asc' ? 'ti-arrow-up' : 'ti-arrow-down') : 'ti-arrows-sort')} aria-hidden="true" />
       </button>
@@ -43,18 +44,18 @@ export function NotesTable({ rows, empty, onOpen, sort, onSort }: { rows: NoteRo
     <table className="table">
       <thead>
         <tr>
-          <th>Nota</th>
+          <th scope="col">Nota</th>
           <Th k="emitterName" sort={sort} onSort={onSort}>Fornecedor ou cliente</Th>
           <Th k="issuedAt" sort={sort} onSort={onSort}>Emissão</Th>
-          <th>CFOP</th>
+          <th scope="col">CFOP</th>
           <Th k="total" sort={sort} onSort={onSort} className="r">Valor</Th>
           <Th k="status" sort={sort} onSort={onSort}>Situação</Th>
-          <th aria-label="PDF" />
+          <th scope="col" aria-label="PDF" />
         </tr>
       </thead>
       <tbody>
         {rows.map((n) => (
-          <tr key={n.id} tabIndex={0} onClick={() => onOpen(n.id)} onKeyDown={(e) => e.key === 'Enter' && onOpen(n.id)}>
+          <tr key={n.id} {...rowProps(() => onOpen(n.id))}>
             <td><b className="num" style={{ fontWeight: 700 }}>{docName(n.model)} {n.number}</b></td>
             <td>{n.counterpart}{n.direction === 'saida' && <span className="hint"> · saída</span>}</td>
             <td>{fmtDate(n.issuedAt)}</td>
@@ -62,7 +63,7 @@ export function NotesTable({ rows, empty, onOpen, sort, onSort }: { rows: NoteRo
             <td className="r num">{brl(n.total)}</td>
             <td><StatusTag status={n.status} /></td>
             <td className="r" style={{ width: 44 }}>
-              <button className="icon-btn" style={{ width: 32, height: 32, borderRadius: 10, fontSize: 16 }} title="Gerar PDF" aria-label={`Gerar PDF da nota ${n.number}`} onClick={(e) => pdf(e, n)} onKeyDown={(e) => e.stopPropagation()}>
+              <button className="icon-btn" style={{ width: 32, height: 32, borderRadius: 10, fontSize: 16 }} title="Gerar PDF" aria-label={`Gerar PDF da nota ${n.number}`} onClick={(e) => pdf(e, n)}>
                 <i className="ti ti-printer" />
               </button>
             </td>
@@ -156,13 +157,7 @@ export function Notas() {
           <NotesTable rows={q.data?.rows ?? []} onOpen={openNote} sort={sort} onSort={onSort} empty="Nenhuma nota encontrada. Tente outro filtro ou limpe as etiquetas." />
         )}
         {!q.isError && (
-          <div className="pager">
-            <span>{total} notas, página {page + 1} de {pages}</span>
-            <span style={{ display: 'flex', gap: 6 }}>
-              <button className="btn" aria-label="Página anterior" onClick={() => setPage((p) => Math.max(0, p - 1))}><i className="ti ti-chevron-left" /></button>
-              <button className="btn" aria-label="Próxima página" onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}><i className="ti ti-chevron-right" /></button>
-            </span>
-          </div>
+          <Pager summary={`${total} notas`} page={page} pages={pages} onPage={setPage} />
         )}
       </div>
     </section>

@@ -8,7 +8,7 @@ export function NfeView({ n }: { n: NoteDetailDTO }) {
               <div className="section-t">Itens da nota</div>
               <div className="table-wrap" style={{ borderRadius: 16 }}>
                 <table className="items">
-                  <thead><tr><th>#</th><th>Descrição</th><th>CFOP</th><th>CST IBS/CBS</th><th>cClassTrib</th><th className="r">IBS</th><th className="r">CBS</th><th className="r">Valor</th></tr></thead>
+                  <thead><tr><th scope="col">#</th><th scope="col">Descrição</th><th scope="col">CFOP</th><th scope="col">CST IBS/CBS</th><th scope="col">cClassTrib</th><th scope="col" className="r">IBS</th><th scope="col" className="r">CBS</th><th scope="col" className="r">Valor</th></tr></thead>
                   <tbody>
                     {n.items.map((i) => (
                       <tr key={i.n}>
