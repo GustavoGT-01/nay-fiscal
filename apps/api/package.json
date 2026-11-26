@@ -9,7 +9,7 @@
     "build": "tsc --noEmit -p .",
     "typecheck": "tsc --noEmit -p .",
     "test": "vitest run",
-    "db:setup": "tsx prisma/migrar.ts && tsx prisma/seed.ts",
+    "db:setup": "prisma generate && tsx prisma/migrar.ts && tsx prisma/seed.ts",
     "db:migrate": "tsx prisma/migrar.ts",
     "db:nova": "tsx prisma/nova-migracao.ts",
     "bench": "tsx prisma/bench.ts",
