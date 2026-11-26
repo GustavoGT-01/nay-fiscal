@@ -34,7 +34,7 @@ Abra http://localhost:5173. Usuários de demonstração (criados pelo seed):
 | Analista | analista@nayfiscal.dev | nay12345 |
 | Administrador | admin@nayfiscal.dev | nay12345 |
 
-O seed gera cerca de 580 NF-e sintéticas para 5 clientes e passa cada uma pelo mesmo caminho da importação real (parser + motor). Rodar `npm run db:setup` de novo apaga e recria os dados de demonstração.
+O seed gera cerca de 730 NF-e sintéticas para 5 clientes e passa cada uma pelo mesmo caminho da importação real (parser + motor). Rodar `npm run db:setup` de novo apaga e recria os dados de demonstração.
 
 ## SPED Fiscal (só leitura)
 
@@ -93,12 +93,12 @@ O servidor liga o modo WAL do SQLite ao subir, para as telas não esperarem a im
 
 ```
 apps/api      Fastify + Prisma (SQLite em dev; troque o provider para postgresql em produção)
-  src/xml         leitura de NF-e, NFC-e, CT-e e evento de cancelamento
+  src/xml         leitura de NF-e, NFC-e, CT-e, NFS-e e eventos de cancelamento
   src/engine      catálogo de regras e avaliador (modos: mapa_por_cfop, dominio_condicionado, ...)
-  src/services    importação (XML/ZIP), auditoria, textos dos achados
-  prisma/seed.ts  dados de demonstração
-  test/           testes do parser e do motor (Vitest)
-apps/web      React + Vite, estilos portados do mockup (scripts/gerar-estilos.mjs gera tokens.css e icons.css)
+  src/services    importação (XML/ZIP e SPED), auditoria, sessão e login, textos dos achados
+  prisma/         schema, migrações do banco e seed.ts (dados de demonstração)
+  test/           testes do parser, do motor, das rotas, de segurança e das migrações (Vitest)
+apps/web      React + Vite, estilos portados do mockup (scripts/gerar-estilos.mjs gera tokens.css e icons.css); testes das telas em test/
 packages/shared  tipos, telas/permissões e cálculo do simulador do Simples
 ```
 
@@ -125,7 +125,7 @@ O mesmo conjunto (tipos, lint, testes e build do front) roda no GitHub Actions e
 - Login com sessão renovável e perfis por tela (analista não vê Gestão).
 - Importação de XML e ZIP com fila e progresso; cancelamentos (evento 110111).
 - Notas, Auditoria (por regra, por nota, por fornecedor), drawer de diagnóstico com "Ver no XML", exportação XLSX e CSV.
-- Início com o código de barras da carteira, Clientes, Simulador do Simples (tabelas reais dos Anexos I a III), Diagnóstico com respostas a partir dos achados.
+- Início com a saúde da carteira (anel e notas por dia), os vereditos de entrada e saída e os erros mais comuns; Clientes, Simulador do Simples (tabelas reais dos Anexos I a III), Diagnóstico com respostas a partir dos achados.
 - Notas com filtros de período, CFOP e modelo (etiquetas que se limpam uma a uma) e colunas que ordenam ao clique; a nota aberta fica no endereço (`?nota=`).
 - Créditos: IBS e CBS das notas de entrada por veredito (pode creditar, em risco, não creditar), por fornecedor ou por mês, com exportação em CSV.
 - Ajuda (perguntas frequentes, atalhos, glossário) e painel de avisos no sino, com leitura por pessoa.
