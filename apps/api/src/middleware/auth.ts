@@ -10,6 +10,8 @@ export interface TokenPayload {
   typ: 'access' | 'refresh';
   /** versao do token do usuario no momento da emissao (revogacao) */
   ver: number;
+  /** so no token de renovacao: identifica o token para a rotacao */
+  jti?: string;
 }
 
 declare module '@fastify/jwt' {
@@ -25,6 +27,9 @@ declare module 'fastify' {
   }
 }
 
+/** O que a pessoa com senha provisoria ainda pode chamar: saber quem e, definir a senha e sair. */
+const LIBERADO_COM_SENHA_PROVISORIA = new Set(['/api/me', '/api/auth/change-password', '/api/auth/logout-all']);
+
 /** preHandler: exige token de acesso valido e carrega o usuario. */
 export async function authenticate(req: FastifyRequest, reply: FastifyReply) {
   try {
@@ -33,6 +38,9 @@ export async function authenticate(req: FastifyRequest, reply: FastifyReply) {
     req.me = await loadUser(req.user.sub, req.user.ver);
   } catch {
     return reply.code(401).send({ message: 'Sua sessão expirou. Entre de novo.' });
+  }
+  if (req.me.mustChangePassword && !LIBERADO_COM_SENHA_PROVISORIA.has(req.routeOptions.url ?? '')) {
+    return reply.code(403).send({ message: 'Defina a sua senha antes de continuar.', code: 'TROCAR_SENHA' });
   }
 }
 

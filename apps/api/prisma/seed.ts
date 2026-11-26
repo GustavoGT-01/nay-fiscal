@@ -164,6 +164,8 @@ async function main() {
   await prisma.documentItem.deleteMany();
   await prisma.document.deleteMany();
   await prisma.upload.deleteMany();
+  await prisma.documentEvent.deleteMany();
+  await prisma.loginAttempt.deleteMany();
   await prisma.auditRun.deleteMany();
   await prisma.establishment.deleteMany();
   await prisma.client.deleteMany();

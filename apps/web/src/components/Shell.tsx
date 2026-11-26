@@ -9,10 +9,10 @@ import { useMarkNotificationsRead, useNotifications } from '../hooks/useNotifica
 import { CommandPalette } from './CommandPalette';
 import { ErrorBoundary } from './ErrorBoundary';
 
-const BELL_ICON: Record<string, string> = { DADOS_APAGADOS: 'ti-trash', CLIENT_DELETED: 'ti-building-store' };
+const BELL_ICON: Record<string, string> = { DADOS_APAGADOS: 'ti-trash', CLIENT_DELETED: 'ti-building-store', NOTAS_ALTERADAS: 'ti-file-alert' };
 
 export function Shell() {
-  const { user, client, clients, setClientId, can, logout } = useSession();
+  const { user, client, clients, setClientId, can, logout, logoutAll } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [sideOpen, setSideOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
@@ -123,6 +123,7 @@ export function Shell() {
               <button role="menuitem" onClick={() => nav('/ajuda')}><span>Ajuda</span><span /></button>
               <button role="menuitem" onClick={() => nav('/senha')}><span>Trocar senha</span><span /></button>
               <button role="menuitem" onClick={logout}><span>Sair</span><span /></button>
+              <button role="menuitem" onClick={() => { setUserOpen(false); logoutAll().catch(() => toast('Não foi possível encerrar as sessões. Tente de novo.', 'ti-alert-triangle')); }}><span>Sair de todos os aparelhos</span><span /></button>
             </div>
           </div>
         </header>

@@ -2,6 +2,8 @@ import { activeRules } from '../../models/rule.js';
 import * as clients from '../../models/client.js';
 import * as documents from '../../models/document.js';
 import * as uploads from '../../models/upload.js';
+import * as documentEvents from '../../models/document-event.js';
+import { authorName, notifyChanges, type Change } from './changes.js';
 import { parseFiscalXml } from '../../xml/nfe-parser.js';
 import { ClientResolver } from './client-resolver.js';
 import { ingestXml } from './ingest-xml.js';
@@ -24,7 +26,7 @@ export async function processUpload(uploadId: string, files: { name: string; xml
   const up = await uploads.update(uploadId, { total: files.length });
   const resolver = new ClientResolver(up.officeId);
   await resolver.load();
-  const fixed = up.clientId ? await clients.findByIdOrNull(up.clientId) : null;
+  const fixed = up.clientId ? await clients.findByIdOrNullUnscoped(up.clientId) : null;
 
   // le tudo antes, para contar quais CNPJs mais aparecem no lote
   const failures: string[] = []; // "arquivo — motivo", so os 3 primeiros vao para a mensagem do envio
@@ -48,10 +50,12 @@ export async function processUpload(uploadId: string, files: { name: string; xml
     }
   }
 
-  let processed = 0, ok = 0, err = 0, failed = 0, skipped = 0;
+  let processed = 0, ok = 0, err = 0, failed = 0, skipped = 0, kept = 0;
+  const author = await authorName(up.userId);
+  const changed: Change[] = []; // notas ja guardadas que este envio mudou (ou tentou mudar)
   const notMine: string[] = [];
   const usedClients = new Map<string, number>();
-  const clientCache = new Map<string, Awaited<ReturnType<typeof clients.findWithEstablishments>>>();
+  const clientCache = new Map<string, Awaited<ReturnType<typeof clients.findWithEstablishmentsUnscoped>>>();
   for (const f of files) {
     const { p, e } = tryParse(f.xml);
     try {
@@ -81,9 +85,14 @@ export async function processUpload(uploadId: string, files: { name: string; xml
         }
       }
       let client = clientCache.get(clientId);
-      if (!client) { client = await clients.findWithEstablishments(clientId); clientCache.set(clientId, client); }
+      if (!client) { client = await clients.findWithEstablishmentsUnscoped(clientId); clientCache.set(clientId, client); }
       const r = await ingestXml(clientId, f.xml, uploadId, { rules, client, parsed: p });
       usedClients.set(clientId, (usedClients.get(clientId) ?? 0) + 1);
+      if (r.outcome === 'mantido') kept++;
+      if (r.change) {
+        changed.push({ ...r.change, file: f.name });
+        await documentEvents.record({ officeId: up.officeId, clientId, ...r.change, userId: up.userId, userName: author, uploadId });
+      }
       if (r.status === 'erro') err++;
       else if (r.status) ok++;
     } catch (e) {
@@ -99,6 +108,9 @@ export async function processUpload(uploadId: string, files: { name: string; xml
 
   const msgs: string[] = [];
   if (failed) msgs.push(`${failed} arquivo(s) não importado(s)${failures.length ? ` (${failures.join('; ')})` : ''}`);
+  const refused = changed.filter((c) => c.type === 'recusada');
+  if (refused.length) msgs.push(`${refused.length} nota(s) recusada(s): já há nota autorizada com a mesma chave e conteúdo diferente (ex.: ${refused.slice(0, 3).map((c) => c.file).join(', ')}). Para trocar, apague a nota guardada e importe de novo`);
+  if (kept) msgs.push(`${kept} nota(s) mantida(s): a guardada tem o protocolo da SEFAZ e o arquivo não`);
   if (skipped && fixed) msgs.push(`${skipped} nota(s) não são de ${fixed.name}${notMine.length ? ` (ex.: ${notMine.join(', ')})` : ''}`);
   else if (skipped) msgs.push(`${skipped} nota(s) sem cliente identificado: cadastre o cliente ou escolha-o antes de importar`);
   const mainClient = fixed?.id ?? [...usedClients].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
@@ -107,4 +119,5 @@ export async function processUpload(uploadId: string, files: { name: string; xml
     createdClients: JSON.stringify(resolver.created),
     message: msgs.length ? msgs.join('. ') : null,
   });
+  await notifyChanges(up.officeId, author, up.fileName, changed);
 }

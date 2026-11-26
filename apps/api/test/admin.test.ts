@@ -57,7 +57,7 @@ beforeAll(async () => {
   await addDoc(ids.clientA, '41000000000000000000000000000000000000000002');
   await addDoc(ids.clientA2, '41000000000000000000000000000000000000000003');
   ids.docB = await addDoc(ids.clientB, '41000000000000000000000000000000000000000004');
-  await prisma.upload.create({ data: { clientId: ids.clientA2, fileName: 'lote.zip', kind: 'ZIP' } });
+  await prisma.upload.create({ data: { officeId: officeA.id, clientId: ids.clientA2, fileName: 'lote.zip', kind: 'ZIP' } });
   await prisma.auditRun.create({ data: { clientId: ids.clientA2, status: 'CONCLUIDO' } });
 
   app = await buildApp();

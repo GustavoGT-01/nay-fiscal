@@ -41,7 +41,7 @@ export function Creditos() {
     const url = URL.createObjectURL(new Blob([csv(d.rows, group)], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');
     a.href = url;
-    a.download = `creditos-${client?.cnpj ?? 'cliente'}-${group === 'forn' ? 'fornecedor' : 'mes'}.csv`;
+    a.download = `creditos-${client?.cnpj || 'cliente'}-${group === 'forn' ? 'fornecedor' : 'mes'}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast('Créditos exportados', 'ti-download');

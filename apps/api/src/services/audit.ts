@@ -8,13 +8,13 @@ import * as findings_ from '../models/finding.js';
 import * as auditRuns from '../models/audit.js';
 
 export async function clientContext(clientId: string): Promise<ClientContext> {
-  const c = await clients.findById(clientId);
+  const c = await clients.findByIdUnscoped(clientId);
   return { cnpjRoot: c.cnpj.slice(0, 8), cityCode: c.cityCode, city: c.city };
 }
 
 /** Audita um documento ja gravado: refaz a leitura do XML, roda as regras e grava os achados. */
 export async function auditStoredDocument(docId: string, rules?: RuleSeed[], ctx?: ClientContext) {
-  const doc = await documents.findWithItems(docId);
+  const doc = await documents.findWithItemsUnscoped(docId);
   rules ??= await activeRules();
   ctx ??= await clientContext(doc.clientId);
   const parsed = parseFiscalXml(doc.xml);

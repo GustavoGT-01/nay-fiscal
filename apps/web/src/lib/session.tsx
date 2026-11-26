@@ -8,6 +8,7 @@ interface Session {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  logoutAll: () => Promise<void>;
   changePassword: (current: string, next: string) => Promise<void>;
   clients: ClientDTO[];
   client: ClientDTO | null;
@@ -45,7 +46,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     retry: (n, e) => !(e instanceof ApiError && e.status === 401) && n < 5,
     retryDelay: 800,
   });
-  const clients = useQuery({ queryKey: ['clients'], queryFn: () => api<ClientDTO[]>('/api/clients'), enabled: !!me.data });
+  const clients = useQuery({ queryKey: ['clients'], queryFn: () => api<ClientDTO[]>('/api/clients'), enabled: !!me.data && !me.data.mustChangePassword });
 
   const logout = useCallback(() => {
     // apaga o cookie de sessao no servidor; a tela sai mesmo se a rede falhar
@@ -56,6 +57,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [qc]);
 
   useEffect(() => { onUnauthorized.cb = logout; }, [logout]);
+
+  /** Encerra a sessao em todos os aparelhos, inclusive este. Se o servidor nao confirmar, a pessoa continua dentro. */
+  const logoutAll = async () => {
+    await api<{ ok: true }>('/api/auth/logout-all', { method: 'POST' });
+    logout();
+  };
 
   const login = async (email: string, password: string) => {
     const r = await api<{ accessToken: string; user: UserDTO }>('/api/auth/login', {
@@ -90,6 +97,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         loading: booting || (hasToken && (me.isPending || (!!me.data && clients.isLoading))),
         login,
         logout,
+        logoutAll,
         changePassword,
         clients: list,
         client,

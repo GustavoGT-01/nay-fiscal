@@ -112,7 +112,7 @@ export function Importar() {
             <select id="alvo" className="select" value={target} onChange={(e) => setTarget(e.target.value)}>
               {canCreate && <option value="auto">Detectar pelo CNPJ das notas (recomendado)</option>}
               {!canCreate && !clients.length && <option value="">Nenhum cliente cadastrado</option>}
-              {clients.map((c) => <option key={c.id} value={c.id}>{c.name}, CNPJ {fmtCnpj(c.cnpj)}</option>)}
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.name}{c.cnpj ? `, CNPJ ${fmtCnpj(c.cnpj)}` : ''}</option>)}
             </select>
             <p className="hint" style={{ fontSize: 12.5, marginTop: 8 }}>
               {target === 'auto'
