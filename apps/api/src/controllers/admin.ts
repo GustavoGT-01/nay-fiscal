@@ -1,12 +1,11 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { IdParam } from '../lib/query.js';
-import type { AdminClientSummaryDTO, AdminUserDTO, WipeResultDTO } from '@nay/shared';
+import type { AdminClientSummaryDTO, WipeResultDTO } from '@nay/shared';
 import { prisma } from '../config/db.js';
 import { ownClient } from '../middleware/auth.js';
 import * as clients from '../models/client.js';
 import * as documents from '../models/document.js';
 import * as notifications from '../models/notification.js';
-import * as users from '../models/user.js';
 import { wipeClientData } from '../services/wipe.js';
 
 const plural = (n: number) => (n === 1 ? '1 nota' : `${n} notas`);
@@ -55,13 +54,4 @@ export async function wipeOffice(req: FastifyRequest, reply: FastifyReply): Prom
 export async function summary(req: FastifyRequest): Promise<AdminClientSummaryDTO[]> {
   const list = await clients.summaryOfOffice(req.me.officeId);
   return list.map((c) => ({ id: c.id, name: c.name, cnpj: c.cnpj, notes: c._count.documents, uploads: c._count.uploads }));
-}
-
-/** Lista de usuarios do escritorio (somente leitura). */
-export async function listUsers(req: FastifyRequest): Promise<AdminUserDTO[]> {
-  const list = await users.listByOffice(req.me.officeId);
-  return list.map((u) => ({
-    id: u.id, name: u.name, email: u.email, role: u.role as AdminUserDTO['role'], active: u.active,
-    profile: u.profile?.name ?? null, createdAt: u.createdAt.toISOString(),
-  }));
 }

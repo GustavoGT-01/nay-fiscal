@@ -7,6 +7,8 @@ import * as notifications from '../controllers/notifications.js';
 export async function miscRoutes(app: FastifyInstance) {
   app.get('/api/me', auth.me);
   app.post('/api/auth/logout-all', auth.logoutAll);
+  app.post('/api/auth/change-password', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, auth.changePassword);
   app.post('/api/ia/ask', { preHandler: can('ia'), config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, ai.ask);
   app.get('/api/notifications', notifications.listNotifications);
+  app.post('/api/notifications/read', notifications.markRead);
 }

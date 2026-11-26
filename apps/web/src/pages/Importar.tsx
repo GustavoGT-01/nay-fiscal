@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import type { UploadDTO } from '@nay/shared';
+import { LIMITES_ENVIO, type UploadDTO } from '@nay/shared';
 import { api, fmtCnpj } from '../lib/api';
 import { useSession } from '../lib/session';
 import { QueryError, useToast } from '../lib/ui';
 import { useUploads } from '../hooks/useUploads';
+const MB = (bytes: number) => Math.round(bytes / 1024 / 1024);
 
 function Job({ u }: { u: UploadDTO }) {
   const done = u.status !== 'PROCESSANDO';
@@ -69,8 +70,10 @@ export function Importar() {
   const send = async (files: FileList | File[]) => {
     const list = [...files].filter((f) => /\.(xml|zip|txt)$/i.test(f.name));
     if (!list.length) return toast('Envie arquivos XML, ZIP ou SPED (.txt).', 'ti-alert-triangle');
-    const big = list.find((f) => f.size > 50 * 1024 * 1024);
-    if (big) return toast(`${big.name} passa de 50 MB.`, 'ti-alert-triangle');
+    if (list.length > LIMITES_ENVIO.arquivos) return toast(`Envie até ${LIMITES_ENVIO.arquivos} arquivos de uma vez.`, 'ti-alert-triangle');
+    const big = list.find((f) => f.size > LIMITES_ENVIO.bytesPorArquivo);
+    if (big) return toast(`${big.name} passa de ${MB(LIMITES_ENVIO.bytesPorArquivo)} MB.`, 'ti-alert-triangle');
+    if (list.reduce((a, f) => a + f.size, 0) > LIMITES_ENVIO.bytesTotal) return toast(`Os arquivos passam de ${MB(LIMITES_ENVIO.bytesTotal)} MB juntos. Envie em partes.`, 'ti-alert-triangle');
     if (!target) return toast('Escolha o cliente das notas.', 'ti-alert-triangle');
     const fd = new FormData();
     fd.append('clientId', target);
@@ -101,7 +104,7 @@ export function Importar() {
             <input ref={input} type="file" multiple accept=".xml,.zip,.txt" hidden onChange={(e) => { if (e.target.files) send(e.target.files); e.target.value = ''; }} />
             <div className="ico"><i className="ti ti-file-upload" /></div>
             <h3>Solte XML, ZIP ou SPED aqui</h3>
-            <p>NF-e, NFC-e e CT-e, até 50 MB por arquivo. Eventos de cancelamento também são aceitos.</p>
+            <p>{`NF-e, NFC-e e CT-e, até ${MB(LIMITES_ENVIO.bytesPorArquivo)} MB por arquivo e ${MB(LIMITES_ENVIO.bytesTotal)} MB por envio. Eventos de cancelamento também são aceitos.`}</p>
             <p style={{ marginTop: 12 }}><span className="btn" style={{ pointerEvents: 'none' }}>Escolher arquivos</span></p>
           </label>
           <div className="field">

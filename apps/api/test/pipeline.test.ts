@@ -8,6 +8,7 @@ import type { PrismaClient } from '@prisma/client';
 import { buildNfe, cnpjFrom, type BuildItem } from '../prisma/demo/nfe-builder.js';
 import { buildNfse } from '../prisma/demo/nfse-builder.js';
 import { makeZip, multipart } from './helpers/zip.js';
+import { c100, h0000 } from './helpers/sped.js';
 
 // Caminho real do produto: envio multipart -> importacao -> auditoria -> leituras -> exportacao.
 const API_DIR = fileURLToPath(new URL('..', import.meta.url));
@@ -120,7 +121,7 @@ describe('envio de arquivos (POST /api/uploads)', () => {
     expect(u.message).toContain('grande demais');
   });
 
-  it('arquivo .txt (SPED) e recusado por enquanto, com mensagem clara', async () => {
+  it('arquivo .txt (SPED) com cabeçalho quebrado vira ERRO com mensagem clara', async () => {
     const [u] = await send([{ name: 'sped.txt', data: '|0000|' }]);
     expect(u.status).toBe('ERRO');
     expect(u.message).toContain('SPED');
@@ -255,7 +256,7 @@ describe('painel e achados por regra: agregação no banco', () => {
   });
 
   it('carteira vazia: painel zerado, sem erro', async () => {
-    const vazio = await prisma.client.create({ data: { officeId: (await prisma.client.findUniqueOrThrow({ where: { id: clientId } })).officeId, name: 'Vazia', cnpj: cnpjFrom('445566770001'), ...MGA } });
+    const vazio = await prisma.client.create({ data: { officeId: (await prisma.client.findUniqueOrThrow({ where: { id: clientId } })).officeId, name: 'Vazia', cnpj: cnpjFrom('314159260001'), ...MGA } });
     const d = (await get(`/api/dashboard?clientId=${vazio.id}`)).json();
     expect(d.totals).toEqual({ audited: 0, ok: 0, erro: 0, atencao: 0, cancelada: 0 });
     expect(d.barcode).toEqual([]);
@@ -305,5 +306,110 @@ describe('cache de regras', () => {
     const a = await activeRules();
     expect(await activeRules()).toBe(a); // mesma lista, nao uma nova leitura
     expect(await ruleMap()).toBe(await ruleMap());
+  });
+});
+
+describe('avisos lidos por usuário', () => {
+  it('o aviso geral é lido por pessoa; ids de outro escritório são ignorados', async () => {
+    const bcrypt = (await import('bcryptjs')).default;
+    const admin = await prisma.user.findUniqueOrThrow({ where: { email: 'admin@p.test' } });
+    await prisma.user.create({ data: { name: 'Outro', email: 'outro@p.test', passwordHash: await bcrypt.hash('senha-forte-123', 4), role: 'ANALISTA', officeId: admin.officeId } });
+    const login2 = await app.inject({ method: 'POST', url: '/api/auth/login', payload: { email: 'outro@p.test', password: 'senha-forte-123' }, headers: { 'cf-connecting-ip': '198.51.100.21' } });
+    const h2 = { authorization: `Bearer ${login2.json().accessToken}` };
+
+    const geral = await prisma.notification.create({ data: { officeId: admin.officeId, type: 'AVISO', title: 'Geral', message: 'para todos', severity: 'INFO' } });
+    const alheio = await prisma.notification.create({ data: { officeId: 'outro-escritorio', type: 'AVISO', title: 'Alheio', message: 'nao e meu', severity: 'INFO' } });
+    const lista = async (headers: Record<string, string>) => (await app.inject({ method: 'GET', url: '/api/notifications', headers })).json() as { id: string; readAt: string | null }[];
+
+    expect((await lista(auth())).find((x) => x.id === geral.id)?.readAt).toBeNull();
+    const r = await app.inject({ method: 'POST', url: '/api/notifications/read', headers: auth(), payload: { ids: [geral.id, alheio.id] } });
+    expect(r.json()).toEqual({ marked: 1 }); // o do outro escritorio nao conta
+    expect((await lista(auth())).find((x) => x.id === geral.id)?.readAt).not.toBeNull();
+    expect((await lista(h2)).find((x) => x.id === geral.id)?.readAt).toBeNull(); // a outra pessoa ainda nao leu
+    expect(await prisma.notificationRead.count({ where: { notificationId: alheio.id } })).toBe(0);
+
+    // sem ids marca tudo; repetir nao marca de novo
+    expect((await app.inject({ method: 'POST', url: '/api/notifications/read', headers: h2, payload: {} })).json()).toEqual({ marked: expect.any(Number) });
+    expect((await app.inject({ method: 'POST', url: '/api/notifications/read', headers: h2, payload: {} })).json()).toEqual({ marked: 0 });
+    expect((await app.inject({ method: 'POST', url: '/api/notifications/read', headers: auth(), payload: { ids: 'x' } })).statusCode).toBe(400);
+  });
+});
+
+describe('lista de notas: ordenação e paginação estável', () => {
+  const lista = async (extra: string, size = 100) => (await get(`/api/notes?clientId=${clientId}&size=${size}${extra}`)).json() as { total: number; rows: { id: string; total: number; issuedAt: string; counterpart: string }[] };
+
+  it('ordena por valor e por data nos dois sentidos', async () => {
+    const asc = (await lista('&sort=total&order=asc')).rows.map((r) => r.total);
+    const desc = (await lista('&sort=total&order=desc')).rows.map((r) => r.total);
+    expect(asc).toEqual([...asc].sort((a, b) => a - b));
+    expect(desc).toEqual([...desc].sort((a, b) => b - a));
+    const datas = (await lista('')).rows.map((r) => r.issuedAt); // padrao: mais recente primeiro
+    expect(datas).toEqual([...datas].sort().reverse());
+  });
+
+  it('páginas de 1 nota percorrem todas as notas, sem repetir nem pular', async () => {
+    const todas = (await lista('')).rows.map((r) => r.id);
+    const vistas: string[] = [];
+    for (let p = 0; p < todas.length; p++) vistas.push(...(await lista(`&page=${p}&sort=issuedAt`, 1)).rows.map((r) => r.id));
+    expect(vistas).toEqual(todas);
+  });
+
+  it('coluna fora da lista dá 400', async () => {
+    expect((await get(`/api/notes?clientId=${clientId}&sort=number`)).statusCode).toBe(400);
+    expect((await get(`/api/notes?clientId=${clientId}&order=sideways`)).statusCode).toBe(400);
+  });
+});
+
+describe('SPED Fiscal x notas importadas (POST /api/uploads com .txt)', () => {
+  const setembro = (n: number) =>
+    buildNfe({
+      uf: '41', issuedAt: new Date('2026-09-05T12:00:00Z'), number: n, natOp: 'VENDA',
+      emitter: { cnpj: FORN_BOM, name: 'Fornecedor Bom', ...MGA, crt: '3' },
+      recipient: { cnpj: EMPRESA, name: 'Empresa Exemplo', ...MGA },
+      items: [{ ...itemOk, unit: 100 + n }],
+    }).xml;
+  const reais = (c: bigint) => (Number(c) / 100).toFixed(2).replace('.', ',');
+  const NUMEROS = [9101, 9102, 9103, 9104];
+
+  it('aponta valor diferente, situação diferente, nota sem XML e nota fora do SPED; a nota certa não gera nada', async () => {
+    await send(NUMEROS.map((n) => ({ name: `s${n}.xml`, data: setembro(n) })));
+    const docs = await prisma.document.findMany({ where: { clientId, number: { in: NUMEROS.map(String) } }, orderBy: { number: 'asc' } });
+    expect(docs).toHaveLength(4);
+    const [certa, valor, cancel, fora] = docs as [typeof docs[number], typeof docs[number], typeof docs[number], typeof docs[number]];
+    const linha = (d: typeof certa, o: { total?: string; sit?: string } = {}) =>
+      c100({ key: d.key, num: d.number, total: o.total ?? reais(d.total), icms: reais(d.vIcms), sit: o.sit, dt: '05092026' });
+    const semXml = '9'.repeat(44);
+    const txt = [h0000(EMPRESA), linha(certa), linha(valor, { total: '1,23' }), linha(cancel, { sit: '02' }), c100({ key: semXml, num: '1' }), '|9999|6|'].join('\r\n');
+
+    const [up] = await send([{ name: 'EFD-092026.txt', data: Buffer.from(txt, 'latin1') }]);
+    expect(up.status).toBe('CONCLUIDO');
+    expect(up.total).toBe(4);
+    expect(up.message).toContain('4 divergência(s)');
+
+    const files = (await get(`/api/sped?clientId=${clientId}`)).json() as { id: string; entries: number; divergenceCount: number; fileName: string }[];
+    expect(files).toHaveLength(1);
+    expect(files[0]).toMatchObject({ fileName: 'EFD-092026.txt', entries: 4, divergenceCount: 4 });
+
+    const det = (await get(`/api/sped/${files[0]!.id}`)).json() as { kinds: Record<string, number>; total: number; rows: { kind: string; number: string }[] };
+    expect(det.kinds).toEqual({ valor: 1, situacao: 1, sem_xml: 1, fora_do_sped: 1 });
+    expect(det.rows.find((r) => r.kind === 'fora_do_sped')!.number).toBe(fora.number);
+    expect(det.rows.some((r) => r.number === certa.number)).toBe(false);
+    const soValor = (await get(`/api/sped/${files[0]!.id}?kind=valor`)).json() as { total: number };
+    expect(soValor.total).toBe(1);
+    expect((await get(`/api/sped/${files[0]!.id}?kind=lixo`)).statusCode).toBe(400);
+    expect((await get(`/api/sped/naoexiste`)).statusCode).toBe(404);
+  });
+
+  it('SPED de outro CNPJ, sem cliente cadastrado ou sem registro 0000 vira ERRO com motivo claro', async () => {
+    const [outro] = await send([{ name: 'a.txt', data: [h0000(FORN_BOM), c100({ key: '1'.repeat(44) })].join('\n') }]);
+    expect(outro.status).toBe('ERRO');
+    expect(outro.message).toContain('não é do cliente');
+    const [semCliente] = await send([{ name: 'b.txt', data: h0000(cnpjFrom('271828180001')) }], { clientId: 'auto' });
+    expect(semCliente.status).toBe('ERRO');
+    expect(semCliente.message).toContain('Nenhum cliente');
+    const [lixo] = await send([{ name: 'c.txt', data: 'isto nao e sped' }]);
+    expect(lixo.status).toBe('ERRO');
+    expect(lixo.message).toContain('0000');
+    expect(await prisma.spedFile.count({ where: { clientId } })).toBe(1); // os com erro nao guardam nada
   });
 });

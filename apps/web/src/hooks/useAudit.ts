@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { NoteRowDTO, RuleGroupDTO, SupplierGroupDTO } from '@nay/shared';
 import { api } from '../lib/api';
 
-export type AuditMode = 'regra' | 'nota' | 'forn';
+export type AuditMode = 'regra' | 'nota' | 'forn' | 'sped';
 
 /** As três visões da Auditoria; só a do modo ativo consulta a API. */
 export function useAudit(clientId: string | undefined, qs: string, mode: AuditMode) {

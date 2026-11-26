@@ -6,6 +6,7 @@ import { safeJson } from '../lib/json.js';
 import { IdParam } from '../lib/query.js';
 import { processUpload } from '../services/ingest/process-upload.js';
 import { xmlsFromZip } from '../services/ingest/zip.js';
+import { processSped } from '../services/sped/process.js';
 import { MAX_UPLOAD_TOTAL_BYTES, MAX_XML_BYTES } from '../services/ingest/limits.js';
 
 /**
@@ -61,7 +62,7 @@ export async function createUploads(req: FastifyRequest, reply: FastifyReply) {
     created.push(up);
     void enqueue(async () => {
       try {
-        if (kind === 'SPED') throw new Error('Leitura de SPED chega numa próxima versão.');
+        if (kind === 'SPED') { await processSped(up.id, f.name, f.buf); return; }
         if (kind === 'XML' && f.buf.length > MAX_XML_BYTES) throw new Error('Arquivo grande demais para um XML fiscal.');
         const xmls = kind === 'ZIP' ? await xmlsFromZip(f.buf) : [{ name: f.name, xml: f.buf.toString('utf8') }];
         await processUpload(up.id, xmls);

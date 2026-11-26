@@ -8,6 +8,7 @@ interface Session {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  changePassword: (current: string, next: string) => Promise<void>;
   clients: ClientDTO[];
   client: ClientDTO | null;
   setClientId: (id: string) => void;
@@ -65,8 +66,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setHasToken(true);
   };
 
+  /** Troca a propria senha: o servidor encerra as outras sessoes e devolve uma nova para esta. */
+  const changePassword = async (current: string, next: string) => {
+    const r = await api<{ accessToken: string; user: UserDTO }>('/api/auth/change-password', {
+      method: 'POST', body: JSON.stringify({ current, next }),
+    });
+    tokens.set(r.accessToken);
+    qc.setQueryData(['me'], r.user);
+  };
+
   const list = clients.data ?? [];
-  const client = list.find((c) => c.id === clientId) ?? list.find((c) => c.name.startsWith('Empresa')) ?? list[0] ?? null;
+  const client = list.find((c) => c.id === clientId) ?? list[0] ?? null;
   const setClientId = (id: string) => {
     setClientIdState(id);
     try { localStorage.setItem(CLIENT_KEY, id); } catch { /* ignora */ }
@@ -80,6 +90,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         loading: booting || (hasToken && (me.isPending || (!!me.data && clients.isLoading))),
         login,
         logout,
+        changePassword,
         clients: list,
         client,
         setClientId,

@@ -41,6 +41,11 @@ export const can = (perm: string) => async (req: FastifyRequest, reply: FastifyR
   if (!req.me?.permissions.includes(perm)) return reply.code(403).send({ message: 'Seu perfil não tem acesso a esta área.' });
 };
 
+/** preHandler: so administrador do escritorio (ADMIN ou OWNER). Quem tem apenas a tela Gestao no perfil so le. */
+export async function adminOnly(req: FastifyRequest, reply: FastifyReply) {
+  if (req.me?.role === 'ANALISTA') return reply.code(403).send({ message: 'Só administradores do escritório podem fazer isso.' });
+}
+
 /** Garante que o cliente pertence ao escritorio do usuario. */
 export async function ownClient(req: FastifyRequest, clientId: unknown) {
   // ?clientId=a&clientId=b vira array: recusa (antes chegava ao Prisma e dava 500)

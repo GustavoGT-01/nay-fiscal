@@ -7,15 +7,8 @@ import { QueryError, Seg, SEV_LABEL, sevClass, StatusTag, useToast } from '../li
 import { useOpenNote } from '../components/note-drawer';
 import { DirectionSeg, useDirection } from '../lib/direction';
 import { useAudit, type AuditMode as Mode } from '../hooks/useAudit';
-
-function monthRange(offset: number) {
-  const d = new Date();
-  const a = new Date(d.getFullYear(), d.getMonth() - offset, 1);
-  const b = new Date(d.getFullYear(), d.getMonth() - offset + 1, 0);
-  const f = (x: Date) => x.toISOString().slice(0, 10);
-  return { from: f(a), to: f(b), label: a.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) };
-}
-const PERIODS = [{ key: 'all', label: 'Período: todas', from: '', to: '' }, ...[0, 1, 2].map((o) => { const r = monthRange(o); return { key: 'm' + o, label: r.label.charAt(0).toUpperCase() + r.label.slice(1), from: r.from, to: r.to }; })];
+import { AuditoriaSped } from './AuditoriaSped';
+import { PERIODS } from '../lib/periods';
 
 export function Auditoria() {
   const { client, can } = useSession();
@@ -93,12 +86,16 @@ export function Auditoria() {
       </div>
       <div className={'runbar' + (run ? ' on' : '')}><div style={{ width: (run?.pct ?? 0) + '%', transition: 'width .4s' }} /></div>
       <div className="toolbar" style={{ marginTop: 0 }}>
-        <Seg<Mode> label="Agrupar" value={mode} onChange={setMode} options={[{ value: 'regra', label: 'Por regra' }, { value: 'nota', label: 'Por nota' }, { value: 'forn', label: direction === 'saida' ? 'Por cliente' : direction === 'all' ? 'Por fornecedor ou cliente' : 'Por fornecedor' }]} />
-        <DirectionSeg value={direction} onChange={setDirection} />
-        <select className="select" style={{ width: 'auto', marginLeft: 'auto', paddingRight: 40 }} aria-label="Período" value={period} onChange={(e) => setPeriod(e.target.value)}>
-          {PERIODS.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
-        </select>
+        <Seg<Mode> label="Agrupar" value={mode} onChange={setMode} options={[{ value: 'regra', label: 'Por regra' }, { value: 'nota', label: 'Por nota' }, { value: 'forn', label: direction === 'saida' ? 'Por cliente' : direction === 'all' ? 'Por fornecedor ou cliente' : 'Por fornecedor' }, { value: 'sped', label: 'SPED' }]} />
+        {mode !== 'sped' && <DirectionSeg value={direction} onChange={setDirection} />}
+        {mode !== 'sped' && (
+          <select className="select" style={{ width: 'auto', marginLeft: 'auto', paddingRight: 40 }} aria-label="Período" value={period} onChange={(e) => setPeriod(e.target.value)}>
+            {PERIODS.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+          </select>
+        )}
       </div>
+
+      {mode === 'sped' && <AuditoriaSped />}
 
       {mode === 'regra' && (
         <div>

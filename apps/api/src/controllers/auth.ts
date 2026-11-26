@@ -6,6 +6,7 @@ import * as users from '../models/user.js';
 import { loadUser } from '../services/auth.js';
 import { lockRemaining, registerFailure, registerSuccess } from '../services/login-guard.js';
 import { clientIp } from '../services/client-ip.js';
+import { hashPassword, passwordProblem } from '../services/password.js';
 
 /** Cookie httpOnly do refresh token: o JavaScript da pagina nunca le (XSS nao rouba a sessao). */
 export const REFRESH_COOKIE = 'nay_rt';
@@ -87,4 +88,20 @@ export async function logoutAll(req: FastifyRequest, reply: FastifyReply) {
   return { ok: true };
 }
 
-export const me = async (req: FastifyRequest) => req.me;
+/**
+ * Troca a propria senha (exige a atual). Encerra as outras sessoes e abre uma nova para quem trocou.
+ * Tambem e o caminho do "primeiro acesso": a senha que o administrador definiu deixa de valer.
+ */
+export async function changePassword(req: FastifyRequest, reply: FastifyReply) {
+  const b = z.object({ current: z.string().min(1).max(200), next: z.string().max(200) }).strict().parse(req.body);
+  const u = await users.findById(req.me.id);
+  if (!(await bcrypt.compare(b.current, u.passwordHash))) return reply.code(400).send({ message: 'A senha atual está incorreta.' });
+  const bad = passwordProblem(b.next);
+  if (bad) return reply.code(400).send({ message: bad });
+  if (b.next === b.current) return reply.code(400).send({ message: 'A nova senha precisa ser diferente da atual.' });
+  const updated = await users.setPassword(u.id, await hashPassword(b.next));
+  setRefreshCookie(req, reply, updated);
+  return { accessToken: accessToken(req, updated), user: await loadUser(updated.id) };
+}
+
+export const me =async (req: FastifyRequest) => req.me;

@@ -52,14 +52,29 @@ export const listForDashboard = (clientId: string, direction: Prisma.DocumentWhe
 
 export const count = (where: Prisma.DocumentWhereInput) => prisma.document.count({ where });
 
-export const listPage = (where: Prisma.DocumentWhereInput, skip: number, take: number) =>
+export type NoteSort = { by: 'issuedAt' | 'total' | 'status' | 'emitterName'; order: 'asc' | 'desc' };
+
+/** O `id` desempata: sem ele, notas com a mesma data podem repetir ou sumir de uma pagina para outra. */
+export const listPage = (where: Prisma.DocumentWhereInput, skip: number, take: number, sort: NoteSort = { by: 'issuedAt', order: 'desc' }) =>
   prisma.document.findMany({
-    where, orderBy: { issuedAt: 'desc' }, skip, take,
+    where, orderBy: [{ [sort.by]: sort.order }, { id: 'asc' }], skip, take,
     include: {
       items: { select: { cfop: true }, take: 1, orderBy: { n: 'asc' } },
       findings: { where: { severity: { in: ['erro', 'atencao', 'a_verificar'] } }, select: { ruleCode: true, severity: true } },
     },
   }).then(fromDb);
+
+/** IBS e CBS destacados (centavos) e numero de notas por veredito. */
+export const creditsByVerdict = (where: Prisma.DocumentWhereInput) =>
+  prisma.document.groupBy({ by: ['verdict'], _count: true, _sum: { vIbs: true, vCbs: true }, where });
+
+/** O mesmo, por fornecedor. */
+export const creditsBySupplier = (where: Prisma.DocumentWhereInput) =>
+  prisma.document.groupBy({ by: ['emitterCnpj', 'emitterName', 'verdict'], _count: true, _sum: { vIbs: true, vCbs: true }, where });
+
+/** Primeira e ultima emissao das notas do filtro. */
+export const issuedRange = (where: Prisma.DocumentWhereInput) =>
+  prisma.document.aggregate({ where, _min: { issuedAt: true }, _max: { issuedAt: true } });
 
 export const listNfseForSummary = (where: Prisma.DocumentWhereInput) =>
   prisma.document.findMany({ where, select: { nfse: true, status: true, direction: true } });
