@@ -1,0 +1,375 @@
+// CONGELADO: estrutura do banco no momento em que as migracoes comecaram (migrations/0_init).
+// Serve so para atualizar bancos criados antes com `db push`. NAO EDITE: mudancas vao no schema.prisma + migracao.
+
+// Banco de dev: SQLite. Para producao troque provider para "postgresql".
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Office {
+  id        String    @id @default(cuid())
+  name      String
+  cnpj      String?
+  plan      String    @default("padrao")
+  createdAt DateTime  @default(now())
+  users     User[]
+  clients   Client[]
+  profiles  Profile[]
+}
+
+model Profile {
+  id          String  @id @default(cuid())
+  officeId    String?
+  office      Office? @relation(fields: [officeId], references: [id])
+  name        String
+  /// JSON: lista de chaves de tela/acao (ver @nay/shared SCREENS e ACTIONS)
+  permissions String  @default("[]")
+  users       User[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("ANALISTA") // ADMIN | OWNER | ANALISTA
+  active       Boolean  @default(true)
+  // senha definida pelo administrador: a pessoa troca no primeiro acesso
+  mustChangePassword Boolean @default(false)
+  // sobe a cada troca de senha/"sair de todos": tokens emitidos antes deixam de valer
+  tokenVersion Int      @default(0)
+  officeId     String
+  office       Office   @relation(fields: [officeId], references: [id])
+  profileId    String?
+  profile      Profile? @relation(fields: [profileId], references: [id])
+  createdAt    DateTime @default(now())
+  refreshTokens RefreshToken[]
+}
+
+/// Um token de renovacao de sessao. Cada uso troca por outro da mesma familia (login);
+/// reaparecer um ja usado indica copia, e a familia inteira cai.
+model RefreshToken {
+  jti       String    @id
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyId  String
+  usedAt    DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  @@index([familyId])
+  @@index([userId])
+}
+
+/// Tentativas erradas de login (bloqueio por conta e IP). `key` e um hash: o texto digitado nunca e guardado.
+model LoginAttempt {
+  key         String    @id
+  fails       Int       @default(1)
+  first       DateTime
+  lockedUntil DateTime?
+}
+
+/// Historico do que mudou uma nota ja guardada. Sem relacao com a nota: sobrevive a ela ser apagada.
+model DocumentEvent {
+  id        String   @id @default(cuid())
+  officeId  String
+  clientId  String
+  key       String
+  number    String
+  type      String // substituida | recusada | cancelada
+  userId    String?
+  userName  String   @default("")
+  uploadId  String?
+  createdAt DateTime @default(now())
+
+  @@index([officeId, createdAt])
+  @@index([clientId, key])
+}
+
+model Client {
+  id             String          @id @default(cuid())
+  officeId       String
+  office         Office          @relation(fields: [officeId], references: [id])
+  name           String
+  tradeName      String?
+  cnpj           String
+  regime         String          @default("LUCRO_REAL") // SIMPLES_NACIONAL | LUCRO_PRESUMIDO | LUCRO_REAL | MEI
+  city           String?
+  cityCode       String?
+  uf             String?
+  cnae           String?
+  createdAt      DateTime        @default(now())
+  establishments Establishment[]
+  documents      Document[]
+  uploads        Upload[]
+  auditRuns      AuditRun[]
+  spedFiles      SpedFile[]
+
+  @@unique([officeId, cnpj])
+}
+
+model Establishment {
+  id        String  @id @default(cuid())
+  clientId  String
+  client    Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  label     String
+  cnpj      String
+  isMatriz  Boolean @default(false)
+}
+
+model Upload {
+  id          String     @id @default(cuid())
+  /// escritorio dono do envio (o cliente pode ser detectado depois, pelo XML)
+  officeId    String
+  /// quem enviou (para registrar substituicao e cancelamento de notas)
+  userId      String?
+  /// cliente escolhido no envio; null = detectar pelo CNPJ das notas
+  clientId    String?
+  client      Client?    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  fileName    String
+  skipped     Int        @default(0)
+  /// JSON: nomes dos clientes criados automaticamente neste envio
+  createdClients String  @default("[]")
+  kind        String // XML | ZIP | SPED
+  status      String     @default("PROCESSANDO") // PROCESSANDO | CONCLUIDO | ERRO
+  total       Int        @default(0)
+  processed   Int        @default(0)
+  okCount     Int        @default(0)
+  errorCount  Int        @default(0)
+  message     String?
+  createdAt   DateTime   @default(now())
+  documents   Document[]
+
+  @@index([officeId, createdAt])
+}
+
+model Document {
+  id             String         @id @default(cuid())
+  clientId       String
+  client         Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  uploadId       String?
+  upload         Upload?        @relation(fields: [uploadId], references: [id], onDelete: SetNull)
+  model          String // 55 | 65 | 57 | NFSE
+  key            String
+  number         String
+  series         String
+  direction      String // entrada | saida
+  issuedAt       DateTime
+  natOp          String         @default("")
+  emitterCnpj    String
+  emitterName    String
+  emitterCity    String         @default("")
+  emitterCityCode String        @default("")
+  emitterUf      String         @default("")
+  emitterCrt     String?
+  recipientCnpj  String         @default("")
+  recipientName  String         @default("")
+  recipientCity  String         @default("")
+  recipientCityCode String      @default("")
+  recipientUf    String         @default("")
+  // Endereco, IE e dados extras do XML (usados no PDF da nota)
+  emitterStreet     String      @default("")
+  emitterNumber     String      @default("")
+  emitterComplement String      @default("")
+  emitterDistrict   String      @default("")
+  emitterCep        String      @default("")
+  emitterIe         String      @default("")
+  recipientStreet     String    @default("")
+  recipientNumber     String    @default("")
+  recipientComplement String    @default("")
+  recipientDistrict   String    @default("")
+  recipientCep        String    @default("")
+  recipientIe         String    @default("")
+  exitAt         DateTime?
+  protocolAt     DateTime?
+  modFrete       String?
+  additionalInfo String         @default("")
+  /// so NFS-e: JSON com servico, ISS, retencoes (ver NfseData em src/xml/nfse-parser.ts)
+  nfse           String?
+  vProd          BigInt          @default(0)
+  vFrete         BigInt          @default(0)
+  vSeg           BigInt          @default(0)
+  vDesc          BigInt          @default(0)
+  vOutro         BigInt          @default(0)
+  vIpi           BigInt          @default(0)
+  total          BigInt          @default(0)
+  vBc            BigInt          @default(0)
+  vIcms          BigInt          @default(0)
+  vPis           BigInt          @default(0)
+  vCofins        BigInt          @default(0)
+  vIbs           BigInt          @default(0)
+  vCbs           BigInt          @default(0)
+  cStat          String?
+  protocol       String?
+  cancelled      Boolean        @default(false)
+  status         String         @default("pendente") // ok | erro | atencao | cancelada | pendente
+  /// entrada: pode_creditar | credito_em_risco | nao_creditar · saida: correta | corrigir | cancelar_reemitir | cancelada
+  verdict        String         @default("")
+  auditedAt      DateTime?
+  xml            String
+  createdAt      DateTime       @default(now())
+  items          DocumentItem[]
+  findings       Finding[]
+
+  @@unique([clientId, key])
+  @@index([clientId, issuedAt])
+  /// groupBy por direcao e veredito do painel (sempre filtrado por cliente)
+  @@index([clientId, direction, verdict])
+  /// contagem por situacao na lista de clientes e no painel
+  @@index([clientId, status])
+  /// achar o dono de uma nota pela chave sozinha (evento de cancelamento no envio)
+  @@index([key])
+}
+
+model DocumentItem {
+  id          String    @id @default(cuid())
+  documentId  String
+  document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  n           Int
+  code        String    @default("")
+  description String    @default("")
+  ncm         String    @default("")
+  cfop        String    @default("")
+  unit        String    @default("")
+  qty         Float     @default(0)
+  unitValue   Float     @default(0)
+  total       BigInt     @default(0)
+  icmsTable   String? // CST | CSOSN
+  cstIcms     String?
+  vIcms       BigInt     @default(0)
+  cstPis      String?
+  vPis        BigInt     @default(0)
+  cstCofins   String?
+  vCofins     BigInt     @default(0)
+  hasIbsCbs   Boolean   @default(false)
+  cstIbsCbs   String?
+  cClassTrib  String?
+  pIbs        Float     @default(0)
+  vIbs        BigInt     @default(0)
+  pCbs        Float     @default(0)
+  vCbs        BigInt     @default(0)
+  findings    Finding[]
+
+  @@index([documentId])
+}
+
+model Rule {
+  id          String  @id @default(cuid())
+  code        String  @unique
+  field       String
+  title       String
+  kind        String  @default("tributaria") // tecnica | tributaria
+  mode        String
+  state       String  @default("interpretada") // publicada | interpretada
+  severity    String  @default("erro") // erro | atencao | a_verificar
+  /// JSON com a definicao do modo (mapa, dominio, condicao...)
+  definition  String  @default("{}")
+  description String
+  what        String
+  why         String
+  how         String
+  fixTag      String?
+  legalBasis  String
+  source      String?
+  action      String  @default("conferir") // cancelar_reemitir | conferir
+  active      Boolean @default(true)
+  version     Int     @default(1)
+}
+
+model Finding {
+  id         String        @id @default(cuid())
+  documentId String
+  document   Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  itemId     String?
+  item       DocumentItem? @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  ruleCode   String
+  field      String
+  kind       String
+  severity   String // erro | atencao | a_verificar | ok
+  observed   String
+  expected   String
+  createdAt  DateTime      @default(now())
+
+  @@index([documentId, severity])
+  @@index([ruleCode, severity])
+}
+
+model AuditRun {
+  id         String    @id @default(cuid())
+  clientId   String
+  client     Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  status     String    @default("RODANDO")
+  total      Int       @default(0)
+  processed  Int       @default(0)
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  @@index([clientId, status])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  officeId  String
+  userId    String?
+  type      String
+  title     String
+  message   String
+  link      String?
+  severity  String    @default("INFO")
+  /// obsoleto: a leitura e por usuario, em NotificationRead (a coluna fica para nao apagar dados)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  reads     NotificationRead[]
+
+  @@index([officeId, createdAt])
+}
+
+/// Leitura de um aviso por um usuario (o aviso geral do escritorio e lido por pessoa).
+model NotificationRead {
+  notificationId String
+  userId         String
+  readAt         DateTime     @default(now())
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@id([notificationId, userId])
+}
+
+/// SPED Fiscal importado e cruzado com as notas (so leitura: o sistema nao gera escrituracao).
+model SpedFile {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  fileName    String
+  cnpj        String
+  periodStart DateTime
+  periodEnd   DateTime
+  /// notas (C100 de NF-e e NFC-e) lidas do arquivo
+  entries     Int
+  ignored     Int      @default(0)
+  /// divergencias achadas (podem ser mais que as guardadas)
+  divergenceCount Int  @default(0)
+  createdAt   DateTime @default(now())
+  divergences SpedDivergence[]
+
+  @@index([clientId, createdAt])
+}
+
+model SpedDivergence {
+  id         String   @id @default(cuid())
+  spedFileId String
+  spedFile   SpedFile @relation(fields: [spedFileId], references: [id], onDelete: Cascade)
+  /// sem_xml | fora_do_sped | valor | icms | situacao | operacao
+  kind       String
+  key        String
+  number     String
+  documentId String?
+  sped       String
+  xml        String
+
+  @@index([spedFileId, kind])
+}

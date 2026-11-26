@@ -43,9 +43,14 @@ Levantamento feito em 11/11/2026, após a reorganização em MVC. Cada item cita
 - ✅ *(26/11/2026)* Tokens gerados do mockup (uma fonte só); cores do login e do Início em variáveis; 60 ícones em vez de todo o pacote (CSS de 322 para 72 KB, fontes publicadas de 40 para 8 arquivos); telas baixadas sob demanda (JavaScript inicial de 445 para 369 KB); anel, contador, medidor, paginação, linha clicável e "copiar" num lugar só; Início dividido em partes; linhas abrem com Espaço; `scope` nas tabelas; "Pular para o conteúdo"; menus com setas e Esc; cartão de cliente sem botão dentro de botão; "copiar" só avisa que copiou quando copiou; a gaveta não fecha mais o que foi aberto quando a nota é relida; rótulo do passo atual no Simulador pelo celular.
 - Falta: os quatro controles segmentados continuam separados (o do Início tem desenho próprio); mockups de login e Início não existem em `design/`; checagem de contraste e leitor de tela não foi feita. O app desktop saiu do projeto, então os itens dele não se aplicam.
 
+## Migrações do banco
+
+- ✅ *(26/11/2026)* Migrações do Prisma no lugar do `db push` a cada abertura: `npm run db:migrate` copia o banco antes de aplicar, adota bancos antigos sem aceitar perda de dados, e `npm run db:nova` cria a próxima. `baseline.prisma` é a estrutura congelada para os bancos antigos.
+- Falta: apagar ou limitar as cópias antigas em `prisma/backups/` fica por conta de quem usa.
+
 ## Pendências operacionais
 
 - `graphify-out/` segue fora do git (não rastreado). Decidir entre ignorar tudo ou versionar `graph.json` e `GRAPH_REPORT.md`.
 - `graphify-out/.graphify_python` aponta para um ambiente Python em pasta temporária; recriar com `pip install graphifyy` num local permanente.
-- Fase 6: rodar `npx prisma db push` em banco antigo (tabelas `RefreshToken`, `LoginAttempt`, `DocumentEvent` e coluna `Upload.userId`); todo mundo precisa entrar de novo uma vez.
+- Fase 6: banco antigo é atualizado por `npm run db:migrate` (o `iniciar.bat` já roda); depois da fase 6 todo mundo precisa entrar de novo uma vez.
 - Após o merge, rodar `npx prisma generate` e `npm run db:setup` em máquinas com banco antigo (as colunas `Client.simplesOptante` e `enrichedAt` foram removidas).

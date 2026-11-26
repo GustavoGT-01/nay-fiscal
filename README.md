@@ -131,6 +131,24 @@ O mesmo conjunto (tipos, lint, testes e build do front) roda no GitHub Actions e
 - Ajuda (perguntas frequentes, atalhos, glossário) e painel de avisos no sino, com leitura por pessoa.
 - Gestão: usuários (criar, editar, desativar, senha provisória trocada no primeiro acesso) e perfis de acesso. Só administradores alteram; quem tem apenas a tela Gestão no perfil lê. "Trocar senha" fica no menu do usuário.
 
+## Banco de dados e migrações
+
+A estrutura do banco é versionada em `apps/api/prisma/migrations`. O `iniciar.bat` roda `npm run db:migrate`, que:
+
+- aplica só o que falta, depois de copiar o banco para `apps/api/prisma/backups/` (as cópias não são apagadas sozinhas);
+- adota um banco criado antes das migrações, sem aceitar perda de dados;
+- se não der para atualizar sem perder dados, para e deixa o banco como estava.
+
+Para voltar a uma cópia: feche o sistema, apague `dev.db-wal` e `dev.db-shm` se existirem, e copie o arquivo de `backups/` por cima de `dev.db`.
+
+Quem muda o `schema.prisma` cria a migração junto (não toca no seu banco), revisa o SQL e commita:
+
+```bash
+npm run db:nova -w @nay/api -- nome_da_mudanca
+```
+
+`npm test` falha se o schema e as migrações divergirem.
+
 ## Estilos e ícones
 
 Cores, fontes e curvas vêm do `:root` de `design/nay-fiscal-mockup.html`; os ícones, do pacote Tabler, só os que o código cita. Depois de mudar o mockup ou usar um ícone novo:

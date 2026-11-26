@@ -15,6 +15,7 @@
     "build": "npm run build -w @nay/shared && npm run build -w @nay/api && npm run build -w @nay/web",
     "test": "npm run test --workspaces --if-present",
     "db:setup": "npm run db:setup -w @nay/api",
+    "db:migrate": "npm run db:migrate -w @nay/api",
     "db:clear": "npm run db:clear -w @nay/api",
     "senha": "npm run senha -w @nay/api --",
     "typecheck": "npm run typecheck --workspaces --if-present",
