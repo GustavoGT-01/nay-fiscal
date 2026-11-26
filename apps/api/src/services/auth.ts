@@ -16,5 +16,5 @@ export async function loadUser(id: string, tokenVersion?: number): Promise<UserD
   // perfil com permissoes ilegiveis fica sem nenhuma (falha fechada), em vez de derrubar o login de todos dele
   const raw = safeJson<unknown>(u.profile?.permissions, []);
   const permissions = isAdmin ? ALL : Array.isArray(raw) ? raw.filter((p): p is string => typeof p === 'string') : [];
-  return { id: u.id, name: u.name, email: u.email, role: u.role as UserDTO['role'], officeId: u.officeId, officeName: u.office.name, permissions };
+  return { id: u.id, name: u.name, email: u.email, role: u.role as UserDTO['role'], officeId: u.officeId, officeName: u.office.name, permissions, mustChangePassword: u.mustChangePassword };
 }

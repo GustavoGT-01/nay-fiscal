@@ -36,6 +36,8 @@ model User {
   passwordHash String
   role         String   @default("ANALISTA") // ADMIN | OWNER | ANALISTA
   active       Boolean  @default(true)
+  // senha definida pelo administrador: a pessoa troca no primeiro acesso
+  mustChangePassword Boolean @default(false)
   // sobe a cada troca de senha/"sair de todos": tokens emitidos antes deixam de valer
   tokenVersion Int      @default(0)
   officeId     String
@@ -62,6 +64,7 @@ model Client {
   documents      Document[]
   uploads        Upload[]
   auditRuns      AuditRun[]
+  spedFiles      SpedFile[]
 
   @@unique([officeId, cnpj])
 }
@@ -272,8 +275,55 @@ model Notification {
   message   String
   link      String?
   severity  String    @default("INFO")
+  /// obsoleto: a leitura e por usuario, em NotificationRead (a coluna fica para nao apagar dados)
   readAt    DateTime?
   createdAt DateTime  @default(now())
+  reads     NotificationRead[]
 
   @@index([officeId, createdAt])
+}
+
+/// Leitura de um aviso por um usuario (o aviso geral do escritorio e lido por pessoa).
+model NotificationRead {
+  notificationId String
+  userId         String
+  readAt         DateTime     @default(now())
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@id([notificationId, userId])
+}
+
+/// SPED Fiscal importado e cruzado com as notas (so leitura: o sistema nao gera escrituracao).
+model SpedFile {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  fileName    String
+  cnpj        String
+  periodStart DateTime
+  periodEnd   DateTime
+  /// notas (C100 de NF-e e NFC-e) lidas do arquivo
+  entries     Int
+  ignored     Int      @default(0)
+  /// divergencias achadas (podem ser mais que as guardadas)
+  divergenceCount Int  @default(0)
+  createdAt   DateTime @default(now())
+  divergences SpedDivergence[]
+
+  @@index([clientId, createdAt])
+}
+
+model SpedDivergence {
+  id         String   @id @default(cuid())
+  spedFileId String
+  spedFile   SpedFile @relation(fields: [spedFileId], references: [id], onDelete: Cascade)
+  /// sem_xml | fora_do_sped | valor | icms | situacao | operacao
+  kind       String
+  key        String
+  number     String
+  documentId String?
+  sped       String
+  xml        String
+
+  @@index([spedFileId, kind])
 }

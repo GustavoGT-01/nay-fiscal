@@ -5,9 +5,11 @@ import { initials } from '../lib/api';
 import { useSession } from '../lib/session';
 import { useToast } from '../lib/ui';
 import { useDashboard } from '../hooks/useDashboard';
-import { useNotifications } from '../hooks/useNotifications';
+import { useMarkNotificationsRead, useNotifications } from '../hooks/useNotifications';
 import { CommandPalette } from './CommandPalette';
 import { ErrorBoundary } from './ErrorBoundary';
+
+const BELL_ICON: Record<string, string> = { DADOS_APAGADOS: 'ti-trash', CLIENT_DELETED: 'ti-building-store' };
 
 export function Shell() {
   const { user, client, clients, setClientId, can, logout } = useSession();
@@ -20,15 +22,22 @@ export function Shell() {
   const loc = useLocation();
   const nav = useNavigate();
   const menuRef = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLDivElement>(null);
+  const [bellOpen, setBellOpen] = useState(false);
 
   const dash = useDashboard(client?.id, { enabled: can('inicio') });
   const notifs = useNotifications();
+  const markRead = useMarkNotificationsRead();
 
   useEffect(() => { setSideOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }, [loc.pathname]);
   useEffect(() => {
-    const close = (e: MouseEvent) => { if (!menuRef.current?.contains(e.target as Node)) { setMenuOpen(false); setUserOpen(false); } };
+    const close = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) { setMenuOpen(false); setUserOpen(false); }
+      if (!bellRef.current?.contains(e.target as Node)) setBellOpen(false);
+    };
     const key = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setCmdOpen(true); }
+      if (e.key === 'Escape') setBellOpen(false);
     };
     document.addEventListener('click', close);
     document.addEventListener('keydown', key);
@@ -82,14 +91,37 @@ export function Shell() {
           </div>
           <button className="search" onClick={() => setCmdOpen(true)}><i className="ti ti-search" /><span>Buscar nota, regra ou tela</span><kbd>Ctrl K</kbd></button>
           <button className="icon-btn" aria-label="Alternar tema" onClick={toggleTheme}><i className={'ti ' + (theme === 'dark' ? 'ti-sun' : 'ti-moon')} /></button>
-          <button className="icon-btn" id="bellBtn" aria-label="Notificações" onClick={() => toast(unread[0]?.message ?? 'Nenhuma notificação nova', 'ti-bell')}>
-            <i className="ti ti-bell" />{unread.length > 0 && <span className="dot" />}
-          </button>
+          <div className="bell-wrap" ref={bellRef}>
+            <button className="icon-btn" id="bellBtn" aria-label={unread.length ? `Avisos, ${unread.length} não lidos` : 'Avisos'} aria-haspopup="true" aria-expanded={bellOpen} onClick={() => setBellOpen((x) => !x)}>
+              <i className="ti ti-bell" />{unread.length > 0 && <span className="dot" />}
+            </button>
+            {bellOpen && (
+              <div className="bell-panel" role="dialog" aria-label="Avisos">
+                <header>
+                  <b>Avisos</b>
+                  <button type="button" className="btn" style={{ padding: '6px 12px' }} disabled={!unread.length || markRead.isPending} onClick={() => markRead.mutate(undefined)}>
+                    <i className="ti ti-checks" />Marcar todos como lidos
+                  </button>
+                </header>
+                <div className="bell-list">
+                  {notifs.isError && <div className="bell-empty">Não foi possível carregar os avisos.</div>}
+                  {!notifs.isError && !(notifs.data ?? []).length && <div className="bell-empty">Nenhum aviso por enquanto.</div>}
+                  {(notifs.data ?? []).map((n) => (
+                    <div key={n.id} className={'bell-item' + (n.readAt ? '' : ' unread')}>
+                      <i className={'ti ' + (BELL_ICON[n.type] ?? (n.severity === 'WARN' ? 'ti-alert-triangle' : 'ti-bell'))} aria-hidden="true" />
+                      <div><b>{n.title}</b><span>{n.message}</span></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           <div style={{ position: 'relative' }}>
             <button className="me" style={{ border: 0, cursor: 'pointer' }} aria-label={user?.name} onClick={() => setUserOpen((x) => !x)}>{user ? initials(user.name) || user.name.slice(0, 2).toUpperCase() : ''}</button>
             <div className={'menu' + (userOpen ? ' open' : '')} role="menu" style={{ left: 'auto', right: 0 }}>
               <button role="menuitem" disabled style={{ cursor: 'default' }}><span>{user?.name}</span><span>{user?.role === 'ANALISTA' ? 'Analista' : 'Administrador'}</span></button>
               <button role="menuitem" onClick={() => nav('/ajuda')}><span>Ajuda</span><span /></button>
+              <button role="menuitem" onClick={() => nav('/senha')}><span>Trocar senha</span><span /></button>
               <button role="menuitem" onClick={logout}><span>Sair</span><span /></button>
             </div>
           </div>

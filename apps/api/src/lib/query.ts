@@ -32,6 +32,10 @@ export const ListNotesQuery = ScopeQuery.extend({
   supplier: z.string().max(20).optional(),
   verdict: z.enum(VERDICTS).optional(),
   model: z.enum(['55', '65', '57', 'NFSE']).optional(), // NFSE = so notas de servico
+  cfop: z.string().regex(/^\d{4}$/, 'CFOP tem 4 dígitos.').optional(), // algum item da nota tem este CFOP
+  // colunas ordenaveis ('number' fica de fora: e texto e ordenaria "10" antes de "9")
+  sort: z.enum(['issuedAt', 'total', 'status', 'emitterName']).default('issuedAt'),
+  order: z.enum(['asc', 'desc']).default('desc'),
 });
 
 export const IdParam = z.object({ id: z.string().min(1).max(100) });

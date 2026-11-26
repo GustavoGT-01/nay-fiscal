@@ -131,6 +131,8 @@ export interface UserDTO {
   officeId: string;
   officeName: string;
   permissions: string[]; // chaves de SCREENS e ACTIONS
+  /** senha definida pelo administrador: precisa ser trocada antes de usar o sistema */
+  mustChangePassword: boolean;
 }
 
 export interface ClientDTO {
@@ -252,6 +254,15 @@ export const REFORMA = {
   grupoObrigatorioDesde: '2026-08-03',
 };
 
+/** Limites de envio: a API recusa acima disso e a tela avisa antes de enviar (mesmos numeros nos dois lados). */
+export const LIMITES_ENVIO = {
+  arquivos: 20,
+  bytesPorArquivo: 50 * 1024 * 1024,
+  bytesTotal: 50 * 1024 * 1024,
+  /** um XML fiscal real tem poucos KB */
+  bytesPorXml: 5 * 1024 * 1024,
+};
+
 /** Meia-noite (Brasilia) de uma data AAAA-MM-DD. */
 export const inicioDoDia = (iso: string) => new Date(iso + 'T00:00:00-03:00');
 
@@ -276,6 +287,62 @@ export interface AdminClientSummaryDTO {
   uploads: number;
 }
 
+/** Uma linha da tela Creditos: fornecedor ou mes, com IBS/CBS destacados e notas por veredito. */
+export interface CreditRowDTO {
+  key: string;
+  label: string;
+  notes: number;
+  ibs: number;
+  cbs: number;
+  /** notas por veredito de entrada */
+  pode: number;
+  risco: number;
+  nao: number;
+}
+
+export interface CreditsDTO {
+  /** IBS + CBS por veredito, em reais */
+  totals: { pode: number; risco: number; nao: number };
+  /** notas de entrada sem veredito (ainda nao auditadas) */
+  notAudited: number;
+  group: 'forn' | 'mes';
+  rows: CreditRowDTO[];
+}
+
+/** Tipos de divergencia entre o SPED Fiscal e as notas importadas. */
+export type SpedKind = 'sem_xml' | 'fora_do_sped' | 'valor' | 'icms' | 'situacao' | 'operacao';
+
+export interface SpedFileDTO {
+  id: string;
+  fileName: string;
+  cnpj: string;
+  periodStart: string;
+  periodEnd: string;
+  entries: number;
+  ignored: number;
+  divergenceCount: number;
+  createdAt: string;
+}
+
+export interface SpedDivergenceDTO {
+  id: string;
+  kind: SpedKind;
+  key: string;
+  number: string;
+  documentId: string | null;
+  sped: string;
+  xml: string;
+}
+
+export interface SpedDetailDTO {
+  file: SpedFileDTO;
+  kinds: Partial<Record<SpedKind, number>>;
+  total: number;
+  /** o arquivo teve mais divergencias do que o limite guardado */
+  truncated: boolean;
+  rows: SpedDivergenceDTO[];
+}
+
 export interface AdminUserDTO {
   id: string;
   name: string;
@@ -283,7 +350,17 @@ export interface AdminUserDTO {
   role: Role;
   active: boolean;
   profile: string | null;
+  profileId: string | null;
+  mustChangePassword: boolean;
   createdAt: string;
+}
+
+/** Perfil de acesso do escritorio: quais telas e acoes um analista enxerga. */
+export interface AdminProfileDTO {
+  id: string;
+  name: string;
+  permissions: string[];
+  users: number;
 }
 
 /** Dados da NFS-e (servico, ISS e retencoes). */

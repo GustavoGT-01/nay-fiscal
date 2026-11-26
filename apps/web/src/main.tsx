@@ -17,6 +17,7 @@ import './styles/clientes-ia.css';
 import './styles/overlays.css';
 import './styles/responsive.css';
 import './styles/extras.css';
+import './styles/telas.css';
 import './styles/login.css';
 import { SessionProvider, useSession } from './lib/session';
 import { EmptyState, ToastProvider } from './lib/ui';
@@ -29,7 +30,9 @@ import { Auditoria } from './pages/Auditoria';
 import { Importar } from './pages/Importar';
 import { Simulador } from './pages/Simulador';
 import { IA } from './pages/IA';
-import { EmBreve } from './pages/Outras';
+import { Creditos } from './pages/Creditos';
+import { Ajuda } from './pages/Ajuda';
+import { TrocarSenha } from './pages/TrocarSenha';
 import { Clientes } from './pages/Clientes';
 import { Nfse } from './pages/Nfse';
 import { Gestao } from './pages/Gestao';
@@ -46,6 +49,8 @@ function App() {
   const { user, loading } = useSession();
   if (loading) return <div className="center-load">Carregando…</div>;
   if (!user) return <Login />;
+  // senha definida pelo administrador: troca antes de usar qualquer tela
+  if (user.mustChangePassword) return <TrocarSenha forced />;
   return (
     <NoteDrawerProvider>
       <Routes>
@@ -58,9 +63,10 @@ function App() {
           <Route path="simulador" element={<Guard perm="simulador"><Simulador /></Guard>} />
           <Route path="ia" element={<Guard perm="ia"><IA /></Guard>} />
           <Route path="nfse" element={<Guard perm="nfse"><Nfse /></Guard>} />
-          <Route path="creditos" element={<Guard perm="creditos"><EmBreve k="creditos" /></Guard>} />
-          <Route path="ajuda" element={<Guard perm="ajuda"><EmBreve k="ajuda" /></Guard>} />
+          <Route path="creditos" element={<Guard perm="creditos"><Creditos /></Guard>} />
+          <Route path="ajuda" element={<Guard perm="ajuda"><Ajuda /></Guard>} />
           <Route path="gestao" element={<Guard perm="gestao"><Gestao /></Guard>} />
+          <Route path="senha" element={<TrocarSenha />} />
           <Route path="*" element={<section className="view on"><EmptyState icon="ti-map-off" title="Página não encontrada" text="O endereço não existe ou foi movido. Volte ao início e escolha a tela pelo menu." action={<Link className="btn primary" to="/">Voltar ao início</Link>} /></section>} />
         </Route>
       </Routes>

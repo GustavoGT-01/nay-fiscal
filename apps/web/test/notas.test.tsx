@@ -25,7 +25,9 @@ const tela = (url = '/notas') =>
       <ToastProvider><Notas /></ToastProvider>
     </MemoryRouter>,
   );
-const filtros = () => useNotes.mock.calls.at(-1)![1] as { verdict: string; supplier: string; status: string };
+type Filtros = { verdict: string; supplier: string; status: string; from: string; to: string; cfop: string; model: string; sort: string; order: string };
+const filtros = () => useNotes.mock.calls.at(-1)![1] as Filtros;
+const f = filtros;
 
 beforeEach(() => {
   refetch.mockClear();
@@ -87,7 +89,51 @@ describe('tela Notas', () => {
   it('o fornecedor da URL vai para a consulta e a tela avisa que está filtrando', () => {
     tela('/notas?fornecedor=11222333000181');
     expect(filtros().supplier).toBe('11222333000181');
-    expect(screen.getByText('Filtrado por fornecedor')).toBeInTheDocument();
+    expect(screen.getByText(/Fornecedor 11\.222\.333\/0001-81/)).toBeInTheDocument();
+  });
+
+  it('a etiqueta do fornecedor limpa só o fornecedor', async () => {
+    tela('/notas?fornecedor=11222333000181');
+    await userEvent.click(screen.getByRole('button', { name: 'Limpar fornecedor' }));
+    expect(filtros().supplier).toBe('');
+    expect(screen.queryByText(/Filtrando por/)).not.toBeInTheDocument();
+  });
+
+  it('período, CFOP e modelo vão para a consulta, viram etiquetas e se limpam um a um', async () => {
+    tela();
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText('De'), '2026-10-01');
+    await user.type(screen.getByLabelText('até'), '2026-10-31');
+    await user.type(screen.getByLabelText('CFOP'), '6912');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Tipo de documento' }), '57');
+    expect(f()).toMatchObject({ from: '2026-10-01', to: '2026-10-31', cfop: '6912', model: '57' });
+    expect(screen.getByText('Período 01/10 a 31/10')).toBeInTheDocument();
+    expect(screen.getByText('CFOP 6912')).toBeInTheDocument();
+    expect(document.querySelector('.chips')).toHaveTextContent('CT-e (57)'); // a opcao do seletor tem o mesmo texto
+
+    await user.click(screen.getByRole('button', { name: 'Limpar período' }));
+    expect(f()).toMatchObject({ from: '', to: '', cfop: '6912', model: '57' });
+    await user.click(screen.getByRole('button', { name: 'Limpar CFOP' }));
+    expect(f().cfop).toBe('');
+  });
+
+  it('CFOP incompleto não refaz a consulta (a API pede 4 dígitos)', async () => {
+    tela();
+    await userEvent.type(screen.getByLabelText('CFOP'), '69');
+    expect(f().cfop).toBe('');
+    expect(screen.queryByText('CFOP 69')).not.toBeInTheDocument();
+  });
+
+  it('clicar no título de uma coluna ordena; clicar de novo inverte', async () => {
+    tela();
+    expect(f()).toMatchObject({ sort: 'issuedAt', order: 'desc' });
+    await userEvent.click(screen.getByRole('button', { name: /^Valor/ }));
+    expect(f()).toMatchObject({ sort: 'total', order: 'desc' });
+    await userEvent.click(screen.getByRole('button', { name: /^Valor/ }));
+    expect(f()).toMatchObject({ sort: 'total', order: 'asc' });
+    expect(screen.getByRole('columnheader', { name: /Valor/ })).toHaveAttribute('aria-sort', 'ascending');
+    await userEvent.click(screen.getByRole('button', { name: /^Situação/ }));
+    expect(f()).toMatchObject({ sort: 'status', order: 'asc' });
   });
 
   it('trocar o filtro de situação refaz a consulta com o novo valor', async () => {

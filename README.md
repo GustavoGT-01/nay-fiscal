@@ -36,6 +36,10 @@ Abra http://localhost:5173. Usuários de demonstração (criados pelo seed):
 
 O seed gera cerca de 580 NF-e sintéticas para 5 clientes e passa cada uma pelo mesmo caminho da importação real (parser + motor). Rodar `npm run db:setup` de novo apaga e recria os dados de demonstração.
 
+## SPED Fiscal (só leitura)
+
+Na tela Importar, um arquivo `.txt` de SPED Fiscal (EFD ICMS/IPI) é lido (registros 0000 e C100 de NF-e e NFC-e) e cruzado, pela chave de acesso, com as notas já importadas do cliente. O cruzamento aponta: valor ou ICMS diferente, operação (entrada/saída) diferente, situação diferente (cancelada de um lado só), nota do SPED sem XML importado e XML do período que não está no SPED. Nada nas notas é alterado, e o sistema não gera escrituração. O CNPJ do arquivo precisa ser do cliente (ou de um de seus estabelecimentos). Itens (C170) e analíticos (C190) ainda não são lidos. As divergências ficam na aba **SPED** da Auditoria (arquivo, totais por tipo e a lista, com clique para abrir a nota). A API expõe `GET /api/sped?clientId=` e `GET /api/sped/:id`.
+
 ## NFS-e (notas de serviço)
 
 A Nay lê a NFS-e do padrão nacional (Emissor Nacional / Sefin) e o evento de cancelamento. Ela confere o código do serviço (LC 116), a alíquota do ISS (acima de 5% é erro; abaixo de 2% fica "a verificar", e a faixa de cada município pode ser cadastrada em `apps/api/src/engine/iss-municipal.ts`), o cálculo do ISS, o ISS em serviço sem tributação, o ISS de MEI, a retenção por pessoa física, o valor líquido e o grupo IBS/CBS. A tela NFS-e mostra as notas prestadas e tomadas, com os totais de ISS e de retenções.
@@ -79,7 +83,7 @@ O servidor liga o modo WAL do SQLite ao subir, para as telas não esperarem a im
 - Sessão: o token de acesso (15 min) fica só na memória da aba; o de renovação (7 dias) fica num cookie `httpOnly`, `SameSite=Strict`, restrito a `/api/auth`. Trocar a senha (`npm run senha`) derruba todas as sessões abertas; `POST /api/auth/logout-all` faz o mesmo para o próprio usuário.
 - Segredo: a API ignora `JWT_SECRET` vazio, curto (menos de 32 caracteres) ou público e usa um segredo aleatório temporário. `iniciar.bat` e `tunnel.bat` geram um segredo forte com `scripts/garantir-segredo.ps1`.
 - Login: 5 senhas erradas seguidas bloqueiam a conta por 15 minutos, e cada IP tem 10 tentativas por minuto.
-- Importação: até 20 arquivos e 100 MB por envio; XML até 5 MB, sem `DOCTYPE`/`ENTITY`; ZIP com no máximo 3.000 XMLs, 300 MB descompactados e taxa de compressão até 200:1 (bloqueia zip bomb).
+- Importação: até 20 arquivos e 50 MB por envio (50 MB por arquivo); XML até 5 MB, sem `DOCTYPE`/`ENTITY`; ZIP com no máximo 3.000 XMLs, 150 MB descompactados e taxa de compressão até 200:1 (bloqueia zip bomb).
 - Saídas: o CSV neutraliza fórmulas vindas do XML (`=`, `+`, `-`, `@`), e o HTML da nota bloqueia scripts por CSP.
 - Testes de ataque em `apps/api/test/security.test.ts` (`npm test`).
 
@@ -120,7 +124,11 @@ O mesmo conjunto (tipos, lint, testes e build do front) roda no GitHub Actions e
 - Importação de XML e ZIP com fila e progresso; cancelamentos (evento 110111).
 - Notas, Auditoria (por regra, por nota, por fornecedor), drawer de diagnóstico com "Ver no XML", exportação XLSX e CSV.
 - Início com o código de barras da carteira, Clientes, Simulador do Simples (tabelas reais dos Anexos I a III), Diagnóstico com respostas a partir dos achados.
+- Notas com filtros de período, CFOP e modelo (etiquetas que se limpam uma a uma) e colunas que ordenam ao clique; a nota aberta fica no endereço (`?nota=`).
+- Créditos: IBS e CBS das notas de entrada por veredito (pode creditar, em risco, não creditar), por fornecedor ou por mês, com exportação em CSV.
+- Ajuda (perguntas frequentes, atalhos, glossário) e painel de avisos no sino, com leitura por pessoa.
+- Gestão: usuários (criar, editar, desativar, senha provisória trocada no primeiro acesso) e perfis de acesso. Só administradores alteram; quem tem apenas a tela Gestão no perfil lê. "Trocar senha" fica no menu do usuário.
 
 ## Próximas etapas
 
-NFS-e (padrão nacional), Créditos de IBS/CBS por fornecedor, Ajuda, Gestão (usuários, perfis, regras), Diagnóstico com IA (Claude), leitura de SPED.
+Gestão › Regras (ativar e desativar regras) e convite por e-mail, Diagnóstico com IA (Claude, depende da decisão sobre enviar dados fiscais à API), validação de assinatura e protocolo do XML, e a leitura de C170/C190 no SPED.

@@ -23,10 +23,11 @@ export async function listNotes(req: FastifyRequest) {
     AND: [
       // fornecedor (entrada) ou cliente (saida)
       ...(q.supplier ? [{ OR: [{ emitterCnpj: q.supplier }, { recipientCnpj: q.supplier }] }] : []),
+      ...(q.cfop ? [{ items: { some: { cfop: q.cfop } } }] : []),
       ...(text ? [{ OR: [{ number: { contains: text } }, { emitterName: { contains: text } }, { recipientName: { contains: text } }, { key: { contains: text } }, { items: { some: { cfop: text } } }] }] : []),
     ],
   };
-  const [total, docs, rules] = await Promise.all([documents.count(where), documents.listPage(where, q.page * q.size, q.size), ruleMap()]);
+  const [total, docs, rules] = await Promise.all([documents.count(where), documents.listPage(where, q.page * q.size, q.size, { by: q.sort, order: q.order }), ruleMap()]);
   const rows: NoteRowDTO[] = docs.map((d) => {
     const cp = counterpart(d);
     const uniq = new Map<string, { rule: string; title: string; severity: Severity }>();

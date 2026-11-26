@@ -11,16 +11,33 @@ export interface NotesFilters {
   supplier: string;
   direction: string;
   verdict: string;
+  /** AAAA-MM-DD, vazio = sem limite */
+  from?: string;
+  to?: string;
+  cfop?: string;
+  /** '' = todos os modelos */
+  model?: string;
+  sort?: SortKey;
+  order?: 'asc' | 'desc';
 }
+
+export type SortKey = 'issuedAt' | 'total' | 'status' | 'emitterName';
 
 /** Lista paginada da tela Notas. */
 export function useNotes(clientId: string | undefined, f: NotesFilters) {
+  const p = new URLSearchParams({ clientId: clientId ?? '', status: f.status, q: f.text, page: String(f.page), size: String(NOTES_PER_PAGE), direction: f.direction });
+  if (f.supplier) p.set('supplier', f.supplier);
+  if (f.verdict) p.set('verdict', f.verdict);
+  if (f.from) p.set('from', f.from);
+  if (f.to) p.set('to', f.to);
+  if (f.cfop) p.set('cfop', f.cfop);
+  if (f.model) p.set('model', f.model);
+  if (f.sort) p.set('sort', f.sort);
+  if (f.order) p.set('order', f.order);
+  const qs = p.toString();
   return useQuery({
-    queryKey: ['notes', clientId, f.status, f.text, f.page, f.supplier, f.direction, f.verdict],
-    queryFn: () =>
-      api<{ total: number; rows: NoteRowDTO[] }>(
-        `/api/notes?clientId=${clientId}&status=${f.status === 'ok' ? 'ok' : f.status}&q=${encodeURIComponent(f.text)}&page=${f.page}&size=${NOTES_PER_PAGE}${f.supplier ? '&supplier=' + f.supplier : ''}&direction=${f.direction}${f.verdict ? '&verdict=' + f.verdict : ''}`,
-      ),
+    queryKey: ['notes', clientId, qs],
+    queryFn: () => api<{ total: number; rows: NoteRowDTO[] }>(`/api/notes?${qs}`),
     enabled: !!clientId,
     placeholderData: keepPreviousData,
   });
