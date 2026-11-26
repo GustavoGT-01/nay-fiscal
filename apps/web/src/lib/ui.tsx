@@ -83,26 +83,6 @@ export function StatusTag({ status }: { status: string }) {
 export const SEV_LABEL: Record<string, string> = { erro: 'Erro', atencao: 'Atenção', a_verificar: 'A verificar', ok: 'OK' };
 export const sevClass = (s: string) => (s === 'a_verificar' ? 'neutro' : s);
 
-/* ---------- Contador animado ---------- */
-export function CountUp({ to, style }: { to: number; style?: React.CSSProperties }) {
-  const [v, setV] = useState(0);
-  const ran = useRef<number | null>(null);
-  useLayoutEffect(() => {
-    const from = ran.current ?? 0;
-    ran.current = to;
-    const t0 = performance.now();
-    let raf = 0;
-    const step = (t: number) => {
-      const p = Math.min(1, (t - t0) / 1100);
-      setV(Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3))));
-      if (p < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [to]);
-  return <strong className="num" style={style}>{v.toLocaleString('pt-BR')}</strong>;
-}
-
 export function EmptyState({ icon, title, text, action }: { icon: string; title: string; text: string; action?: ReactNode }) {
   return (
     <div className="empty">

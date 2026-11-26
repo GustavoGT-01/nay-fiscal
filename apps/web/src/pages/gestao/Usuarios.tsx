@@ -33,7 +33,7 @@ export function Usuarios() {
         )}
         <div className="table-wrap">
           <table className="table static">
-            <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Situação</th><th className="r">Desde</th>{canEdit && <th aria-label="Ações" />}</tr></thead>
+            <thead><tr><th scope="col">Nome</th><th scope="col">E-mail</th><th scope="col">Perfil</th><th scope="col">Situação</th><th scope="col" className="r">Desde</th>{canEdit && <th scope="col" aria-label="Ações" />}</tr></thead>
             <tbody>
               {users.isPending && <tr><td colSpan={6}><div className="skel" style={{ height: 18 }} /></td></tr>}
               {users.isError && <tr><td colSpan={6} className="hint">Não foi possível carregar os usuários.</td></tr>}

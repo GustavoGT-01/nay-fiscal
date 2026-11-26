@@ -1,3 +1,4 @@
+import { refreshData } from '../../lib/queries';
 import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../../lib/api';
@@ -22,7 +23,7 @@ export function DeleteNoteButton({ id, label, onDeleted }: { id: string; label: 
       onDeleted();
       toast(`${label} apagada`, 'ti-trash');
       qc.removeQueries({ queryKey: ['note', id] });
-      await qc.invalidateQueries();
+      await refreshData(qc);
     } catch (e) {
       toast(e instanceof ApiError ? e.message : 'Não foi possível apagar. Tente de novo.', 'ti-alert-triangle');
     } finally {

@@ -6,6 +6,7 @@ import { api, ApiError, fmtCnpj } from '../lib/api';
 import { useSession } from '../lib/session';
 import { Seg, useToast } from '../lib/ui';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { refreshData } from '../lib/queries';
 import { Usuarios } from './gestao/Usuarios';
 import { Perfis } from './gestao/Perfis';
 
@@ -37,7 +38,7 @@ export function Gestao() {
         : await api<WipeResultDTO>('/api/data/documents', { method: 'DELETE', body: JSON.stringify({ confirm: 'APAGAR' }) });
       toast(`${notas(r.documents)} ${r.documents === 1 ? 'apagada' : 'apagadas'}`, 'ti-trash');
       setPending(null);
-      await qc.invalidateQueries();
+      await refreshData(qc);
     } catch (e) {
       toast(e instanceof ApiError ? e.message : 'Não foi possível apagar. Tente de novo.', 'ti-alert-triangle');
     } finally {
@@ -63,7 +64,7 @@ export function Gestao() {
           <p className="hint">Apagar remove notas, itens, achados, envios e auditorias. Clientes, usuários e regras ficam.</p>
           <div className="table-wrap">
             <table className="table static">
-              <thead><tr><th>Cliente</th><th>CNPJ</th><th className="r">Notas</th><th className="r">Envios</th><th className="r">Ação</th></tr></thead>
+              <thead><tr><th scope="col">Cliente</th><th scope="col">CNPJ</th><th scope="col" className="r">Notas</th><th scope="col" className="r">Envios</th><th scope="col" className="r">Ação</th></tr></thead>
               <tbody>
                 {summary.isPending && <tr><td colSpan={5}><div className="skel" style={{ height: 18 }} /></td></tr>}
                 {summary.isError && <tr><td colSpan={5} className="hint">Não foi possível carregar os dados.</td></tr>}

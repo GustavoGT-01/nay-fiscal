@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "estilos": "node scripts/gerar-estilos.mjs",
     "dev": "vite",
     "build": "tsc --noEmit -p . && vite build",
     "typecheck": "tsc --noEmit -p .",

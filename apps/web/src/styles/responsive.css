@@ -4,7 +4,9 @@
 @media (max-width:1080px){
   .two,.sim{grid-template-columns:1fr}
   .steps{flex-direction:row;overflow:auto}
-  .step span.l{display:none}
+  .step{position:relative}
+  .step span.l{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .step.cur span.l{position:static;width:auto;height:auto;overflow:visible;clip:auto;white-space:nowrap}
 }
 @media (max-width:820px){
   .app{grid-template-columns:1fr}

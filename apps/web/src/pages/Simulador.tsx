@@ -139,7 +139,7 @@ export function Simulador() {
       <div className="sim">
         <div className="panel steps">
           {STEPS.map((t, i) => (
-            <button key={t} className={`step${i + 1 < s.step ? ' done' : ''}${i + 1 === s.step ? ' cur' : ''}`} onClick={() => set({ step: i + 1 })}>
+            <button key={t} className={`step${i + 1 < s.step ? ' done' : ''}${i + 1 === s.step ? ' cur' : ''}`} onClick={() => set({ step: i + 1 })} aria-current={i + 1 === s.step ? 'step' : undefined}>
               <span className="n">{i + 1 < s.step ? <i className="ti ti-check" /> : i + 1}</span><span className="l">{t}</span>
             </button>
           ))}

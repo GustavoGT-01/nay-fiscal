@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { brl, fmtDate } from '../lib/api';
 import { useSession } from '../lib/session';
 import { EmptyState, QueryError, Seg, StatusTag } from '../lib/ui';
+import { Pager, rowProps } from '../lib/widgets';
 import { useOpenNote } from '../components/note-drawer';
 import { NFSE_PER_PAGE as PER, useNfse } from '../hooks/useNfse';
 
@@ -51,10 +52,10 @@ export function Nfse() {
             action={<Link className="btn primary" to="/importar"><i className="ti ti-cloud-upload" />Importar NFS-e</Link>} />
         ) : (
           <table className="table">
-            <thead><tr><th>Nota</th><th>Prestador ou tomador</th><th>Emissão</th><th>Serviço</th><th className="r">Valor</th><th className="r">ISS</th><th>Situação</th></tr></thead>
+            <thead><tr><th scope="col">Nota</th><th scope="col">Prestador ou tomador</th><th scope="col">Emissão</th><th scope="col">Serviço</th><th scope="col" className="r">Valor</th><th scope="col" className="r">ISS</th><th scope="col">Situação</th></tr></thead>
             <tbody>
               {list.data?.rows.map((n) => (
-                <tr key={n.id} tabIndex={0} onClick={() => openNote(n.id)} onKeyDown={(e) => e.key === 'Enter' && openNote(n.id)}>
+                <tr key={n.id} {...rowProps(() => openNote(n.id))}>
                   <td><b className="num" style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>NFS-e {n.number}</b><div className="hint" style={{ fontSize: 12 }}>{n.direction === 'saida' ? 'prestada' : 'tomada'}</div></td>
                   <td>{n.counterpart}</td>
                   <td>{fmtDate(n.issuedAt)}</td>
@@ -68,13 +69,7 @@ export function Nfse() {
           </table>
         )}
         {total > 0 && (
-          <div className="pager">
-            <span>{total} NFS-e, página {page + 1} de {pages}</span>
-            <span style={{ display: 'flex', gap: 6 }}>
-              <button className="btn" aria-label="Página anterior" onClick={() => setPage((p) => Math.max(0, p - 1))}><i className="ti ti-chevron-left" /></button>
-              <button className="btn" aria-label="Próxima página" onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}><i className="ti ti-chevron-right" /></button>
-            </span>
-          </div>
+          <Pager summary={`${total} NFS-e`} page={page} pages={pages} onPage={setPage} />
         )}
       </div>
     </section>

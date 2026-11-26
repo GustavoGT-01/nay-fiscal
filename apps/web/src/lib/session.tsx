@@ -33,7 +33,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         if (r) { qc.setQueryData(['me'], r.user); setHasToken(true); }
       })
       .finally(() => setBooting(false));
-  }, []);
+  }, [booting, qc]);
   const [clientId, setClientIdState] = useState<string | null>(() => {
     try { return localStorage.getItem(CLIENT_KEY); } catch { return null; }
   });

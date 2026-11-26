@@ -98,7 +98,7 @@ apps/api      Fastify + Prisma (SQLite em dev; troque o provider para postgresql
   src/services    importação (XML/ZIP), auditoria, textos dos achados
   prisma/seed.ts  dados de demonstração
   test/           testes do parser e do motor (Vitest)
-apps/web      React + Vite, estilos portados do mockup
+apps/web      React + Vite, estilos portados do mockup (scripts/gerar-estilos.mjs gera tokens.css e icons.css)
 packages/shared  tipos, telas/permissões e cálculo do simulador do Simples
 ```
 
@@ -130,6 +130,16 @@ O mesmo conjunto (tipos, lint, testes e build do front) roda no GitHub Actions e
 - Créditos: IBS e CBS das notas de entrada por veredito (pode creditar, em risco, não creditar), por fornecedor ou por mês, com exportação em CSV.
 - Ajuda (perguntas frequentes, atalhos, glossário) e painel de avisos no sino, com leitura por pessoa.
 - Gestão: usuários (criar, editar, desativar, senha provisória trocada no primeiro acesso) e perfis de acesso. Só administradores alteram; quem tem apenas a tela Gestão no perfil lê. "Trocar senha" fica no menu do usuário.
+
+## Estilos e ícones
+
+Cores, fontes e curvas vêm do `:root` de `design/nay-fiscal-mockup.html`; os ícones, do pacote Tabler, só os que o código cita. Depois de mudar o mockup ou usar um ícone novo:
+
+```bash
+npm run estilos -w @nay/web
+```
+
+`npm test` falha se `tokens.css` ou `icons.css` ficarem desatualizados, ou se um nome de ícone não existir. As telas de login e Início não têm mockup versionado em `design/`: a referência delas é o próprio código (`login.css`, `painel.css`).
 
 ## Próximas etapas
 

@@ -33,3 +33,10 @@
 .icon-btn:hover{transform:translateY(-1px)}
 .icon-btn .dot{position:absolute;top:9px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--caju);box-shadow:0 0 0 2px var(--surface)}
 .me{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#9C85FF,var(--caju));color:#fff;display:grid;place-items:center;font-weight:600;font-size:13px}
+
+/* atalho de teclado: so aparece quando recebe o foco */
+.skip{position:absolute;left:12px;top:-60px;z-index:100;padding:10px 16px;border-radius:12px;background:var(--uva);color:#fff;font-weight:600;text-decoration:none}
+.skip:focus{top:12px}
+.main:focus{outline:none}
+/* altura da janela de verdade no celular (a barra do navegador nao corta o menu) */
+@supports (height:100dvh){.app{min-height:100dvh}.side{height:100dvh}}

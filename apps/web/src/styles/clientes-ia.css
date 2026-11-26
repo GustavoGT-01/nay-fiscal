@@ -20,3 +20,8 @@
 .empty{text-align:center;padding:70px 20px}
 .empty .ico{width:74px;height:74px;border-radius:24px;margin:0 auto 16px;display:grid;place-items:center;font-size:34px;background:var(--uva-soft);color:var(--uva)}
 .empty p{color:var(--muted);max-width:44ch;margin:8px auto 18px}
+.ccard{position:relative}
+.ccard h3 .ccard-pick{all:unset;cursor:pointer}
+.ccard-pick::after{content:"";position:absolute;inset:0;border-radius:20px}
+.ccard:has(.ccard-pick:focus-visible){outline:2px solid var(--uva);outline-offset:2px}
+.ccard .ccard-acts{position:relative;z-index:1;width:fit-content}

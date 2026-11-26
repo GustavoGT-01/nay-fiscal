@@ -9,11 +9,14 @@ import { DirectionSeg, useDirection } from '../lib/direction';
 import { useAudit, type AuditMode as Mode } from '../hooks/useAudit';
 import { AuditoriaSped } from './AuditoriaSped';
 import { PERIODS } from '../lib/periods';
+import { Menu, Meter, rowProps, useCopy } from '../lib/widgets';
+import { refreshData } from '../lib/queries';
 
 export function Auditoria() {
   const { client, can } = useSession();
   const openNote = useOpenNote();
   const toast = useToast();
+  const copy = useCopy();
   const qc = useQueryClient();
   const nav = useNavigate();
   const [params] = useSearchParams();
@@ -37,7 +40,7 @@ export function Auditoria() {
       if (r.status !== 'RODANDO') {
         clearInterval(t);
         setTimeout(() => setRun(null), 500);
-        qc.invalidateQueries();
+        void refreshData(qc);
         toast(r.status === 'CONCLUIDA' ? `Auditoria concluída: ${r.total} notas` : 'A auditoria parou com erro. Tente de novo.', r.status === 'CONCLUIDA' ? 'ti-circle-check' : 'ti-alert-triangle');
       }
     }, 500);
@@ -72,11 +75,11 @@ export function Auditoria() {
         <div><h1 id="h-aud">Auditoria</h1><p className="lede"><span className="cname">{client?.name}</span>, {p.key === 'all' ? 'todas as notas do período.' : 'notas de ' + p.label.toLowerCase() + '.'}</p></div>
         <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
           <button className="btn" onClick={() => setExpOpen((x) => !x)} aria-expanded={expOpen}><i className="ti ti-download" />Exportar</button>
-          <div className={'menu' + (expOpen ? ' open' : '')} style={{ top: 'calc(100% + 6px)', left: 0 }} onMouseLeave={() => setExpOpen(false)}>
-            <button onClick={() => { setExpOpen(false); exportAs('xlsx'); }}><span>Planilha Excel (.xlsx)</span><span>resumo + achados</span></button>
-            <button onClick={() => { setExpOpen(false); exportAs('csv'); }}><span>Arquivo CSV</span><span>Excel pt-BR</span></button>
-            <button onClick={() => { setExpOpen(false); window.print(); }}><span>Imprimir ou PDF</span><span>tela atual</span></button>
-          </div>
+          <Menu open={expOpen} onClose={() => setExpOpen(false)} label="Exportar" style={{ top: 'calc(100% + 6px)', left: 0 }} onMouseLeave={() => setExpOpen(false)}>
+            <button role="menuitem" onClick={() => { setExpOpen(false); exportAs('xlsx'); }}><span>Planilha Excel (.xlsx)</span><span>resumo + achados</span></button>
+            <button role="menuitem" onClick={() => { setExpOpen(false); exportAs('csv'); }}><span>Arquivo CSV</span><span>Excel pt-BR</span></button>
+            <button role="menuitem" onClick={() => { setExpOpen(false); window.print(); }}><span>Imprimir ou PDF</span><span>tela atual</span></button>
+          </Menu>
           {can('auditoria.rodar') && (
             <button className="btn primary" onClick={startRun} disabled={!!run}>
               <i className={'ti ' + (run ? 'ti-loader-2' : 'ti-player-play')} />{run ? 'Auditando notas' : 'Rodar auditoria'}
@@ -117,7 +120,7 @@ export function Auditoria() {
                   {r.fixTag && (
                     <div className="code">
                       <span>Corrigir: <span className="add">{r.fixTag}</span></span>
-                      <button className="btn" style={{ padding: '5px 10px', fontSize: 12 }} onClick={() => { navigator.clipboard?.writeText(r.fixTag!); toast('Correção copiada'); }}><i className="ti ti-copy" />Copiar</button>
+                      <button className="btn" style={{ padding: '5px 10px', fontSize: 12 }} onClick={() => void copy(r.fixTag!, 'Correção copiada')}><i className="ti ti-copy" />Copiar</button>
                     </div>
                   )}
                   <div className="minirows">
@@ -134,10 +137,10 @@ export function Auditoria() {
         <div className="table-wrap">
           {notes.isLoading ? <div className="skel" style={{ height: 240, margin: 16 }} /> : notes.isError ? <QueryError error={notes.error} onRetry={() => notes.refetch()} what="as notas" /> : (
             <table className="table">
-              <thead><tr><th>Nota</th><th>{direction === 'saida' ? 'Cliente' : direction === 'all' ? 'Fornecedor ou cliente' : 'Fornecedor'}</th><th>Achados</th><th>Situação</th></tr></thead>
+              <thead><tr><th scope="col">Nota</th><th scope="col">{direction === 'saida' ? 'Cliente' : direction === 'all' ? 'Fornecedor ou cliente' : 'Fornecedor'}</th><th scope="col">Achados</th><th scope="col">Situação</th></tr></thead>
               <tbody>
                 {notes.data?.rows.map((n) => (
-                  <tr key={n.id} tabIndex={0} onClick={() => openNote(n.id)} onKeyDown={(e) => e.key === 'Enter' && openNote(n.id)}>
+                  <tr key={n.id} {...rowProps(() => openNote(n.id))}>
                     <td><b className="num">NF-e {n.number}</b></td><td>{n.counterpart}</td>
                     <td>{n.findings.filter((f) => f.severity !== 'a_verificar').map((f) => f.title).join('; ')}</td>
                     <td><StatusTag status={n.status} /></td>
@@ -159,11 +162,7 @@ export function Auditoria() {
             return (
               <button key={s.cnpj} className="gcard" onClick={() => nav(`/notas?fornecedor=${s.cnpj}`)}>
                 <h3>{s.name}</h3>
-                <div className="meter">
-                  <i style={{ width: (o / s.notes) * 100 + '%', background: 'var(--limao)' }} />
-                  <i style={{ width: (s.withAttention / s.notes) * 100 + '%', background: 'var(--maracuja)' }} />
-                  <i style={{ width: (s.withError / s.notes) * 100 + '%', background: 'var(--caju)' }} />
-                </div>
+                <Meter className="meter" total={s.notes} parts={[[o, 'var(--limao)'], [s.withAttention, 'var(--maracuja)'], [s.withError, 'var(--caju)']]} />
                 <small>{s.notes} notas: {s.withError} com erro, {s.withAttention} com atenção</small>
               </button>
             );

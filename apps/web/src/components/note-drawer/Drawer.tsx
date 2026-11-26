@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Seg, useToast } from '../../lib/ui';
+import { Ring, Seg, useToast } from '../../lib/ui';
 import { brl, fmtCnpj, fmtDate } from '../../lib/api';
 import { useSession } from '../../lib/session';
 import { printNote } from '../../lib/print';
@@ -56,10 +56,18 @@ export function NoteDrawer({ id, onClose }: { id: string | null; onClose: () => 
   };
   const pct = checks.length ? Math.round((c.ok / checks.length) * 100) : 0;
 
+  // abre o primeiro erro so quando a NOTA muda: uma releitura da mesma nota nao fecha o que a pessoa abriu
+  const opened = useRef<string | null>(null);
   useEffect(() => {
-    if (!n) return;
+    if (!id) opened.current = null;
+    if (!n || opened.current === n.id) return;
+    opened.current = n.id;
     const first = n.checks.find((x) => x.severity === 'erro');
     setOpenIdx(new Set(first ? [first.id] : []));
+  }, [id, n]);
+
+  useEffect(() => {
+    if (!n) return;
     const t = setTimeout(() => setRingPct(pct), 250);
     return () => clearTimeout(t);
   }, [n, pct]);
@@ -100,10 +108,7 @@ export function NoteDrawer({ id, onClose }: { id: string | null; onClose: () => 
             <>
               <VerdictBanner n={n} />
               <div className="score">
-                <svg className="ring" viewBox="0 0 60 60">
-                  <circle className="bg" cx="30" cy="30" r="25" />
-                  <circle className="fg" cx="30" cy="30" r="25" strokeDasharray="157" strokeDashoffset={157 - (157 * ringPct) / 100} style={{ stroke: ringStroke }} />
-                </svg>
+                <Ring pct={ringPct} color={ringStroke} />
                 <div>
                   <strong style={{ font: '800 22px var(--display)' }}>{cancelled ? 'Cancelada' : `${c.ok} de ${checks.length} verificações ok`}</strong>
                   <div className="hint">
