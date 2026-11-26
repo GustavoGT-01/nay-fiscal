@@ -29,23 +29,23 @@ if not exist "apps\api\.env" (
 rem segredo de sessao proprio (nunca o do exemplo, que e publico)
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\garantir-segredo.ps1"
 
+rem cliente Prisma de acordo com o codigo atual (falha sem problema se o sistema ja estiver aberto)
+pushd apps\api
+call npx prisma generate >nul
+popd
+
 if not exist "apps\api\prisma\dev.db" (
   echo  Criando o banco de dados com dados de demonstracao...
   call npm run db:setup
   if errorlevel 1 goto erro
 ) else (
-  rem atualiza a estrutura do banco (e o cliente Prisma) sem apagar dados
-  pushd apps\api
-  call npx prisma db push --skip-generate
+  rem aplica as migracoes pendentes sem apagar dados, com copia de seguranca antes
+  call npm run db:migrate --silent
   if errorlevel 1 (
-    popd
     echo.
-    echo  O banco existente nao aceitou a atualizacao da estrutura. Seus dados nao foram alterados.
-    echo  Para recriar o banco de demonstracao, apague apps\api\prisma\dev.db e rode de novo.
+    echo  O banco nao foi atualizado. Veja a mensagem acima: seus dados estao em apps\api\prisma.
     goto erro
   )
-  call npx prisma generate >nul
-  popd
 )
 
 echo.

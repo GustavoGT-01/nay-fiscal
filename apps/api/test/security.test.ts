@@ -133,7 +133,7 @@ describe('login e sessao', () => {
       codes.push(r.statusCode);
     }
     expect(codes).toContain(429);
-  }, 20_000); // 14 logins em serie, cada um com bcrypt de custo 12: passa de 5 s com a maquina carregada
+  });
 
   it('refresh pelo cookie funciona e gira o cookie; sem cookie da 401', async () => {
     const l = await login('admin@b.test');
