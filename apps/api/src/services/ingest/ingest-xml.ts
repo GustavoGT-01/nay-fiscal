@@ -4,6 +4,7 @@ import * as documents from '../../models/document.js';
 import { auditParsedDocument, auditStoredDocument } from '../audit.js';
 import type { RuleSeed } from '../../engine/catalog.js';
 import type { ClientContext } from '../../engine/evaluator.js';
+import { directionOf, rootsOf } from './direction.js';
 import { activeRules } from '../../models/rule.js';
 
 type IngestOutcome = 'novo' | 'atualizado' | 'cancelamento' | 'ignorado';
@@ -11,14 +12,14 @@ type IngestOutcome = 'novo' | 'atualizado' | 'cancelamento' | 'ignorado';
 /** Dados ja carregados pelo chamador de um lote, para nao repetir consultas a cada nota. */
 export interface IngestShared {
   rules?: RuleSeed[];
-  client?: Awaited<ReturnType<typeof clients.findById>>;
+  client?: Awaited<ReturnType<typeof clients.findWithEstablishments>>;
   /** XML ja lido pelo chamador: nao le de novo. */
   parsed?: ParseResult;
 }
 
 /** Le um XML, grava (ou atualiza) o documento e audita. */
 export async function ingestXml(clientId: string, xml: string, uploadId?: string, shared: IngestShared = {}): Promise<{ outcome: IngestOutcome; status?: string }> {
-  const client = shared.client ?? (await clients.findById(clientId));
+  const client = shared.client ?? (await clients.findWithEstablishments(clientId));
   const root = client.cnpj.slice(0, 8);
   const ctx: ClientContext = { cnpjRoot: root, cityCode: client.cityCode, city: client.city };
   const parsed = shared.parsed ?? parseFiscalXml(xml);
@@ -31,7 +32,7 @@ export async function ingestXml(clientId: string, xml: string, uploadId?: string
     return { outcome: 'cancelamento', status };
   }
 
-  const direction = parsed.emitter.cnpj.slice(0, 8) === root ? 'saida' : 'entrada';
+  const direction = directionOf(parsed, rootsOf(client));
   const data = {
     clientId,
     uploadId: uploadId ?? null,

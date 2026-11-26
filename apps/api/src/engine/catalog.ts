@@ -1,9 +1,10 @@
 /**
  * Catalogo inicial de regras do motor de auditoria (seed).
- * Requisitos levantados em doc/04-validacoes-e-erros.md; textos escritos pela Nay Fiscal.
+ * Textos escritos pela Nay Fiscal; a base legal de cada regra esta no campo legalBasis.
  * Placeholders nos textos: {cfop} {observado} {esperado} {item} {ncm}
  */
 
+import { dataBR, REFORMA } from '@nay/shared';
 import { actionFor, type RuleAction } from './actions.js';
 
 export interface RuleSeed {
@@ -26,6 +27,12 @@ export interface RuleSeed {
 }
 
 
+/** cClassTrib de remessa/retorno sem venda e de venda a Zona Franca de Manaus / ALC (NT 2025.002). */
+export const CCLASS_REMESSA = '410999';
+export const CCLASS_ZFM = '200022';
+
+const GRUPO_DESDE = dataBR(REFORMA.grupoObrigatorioDesde);
+
 /** CFOPs de remessa, retorno e outras saidas sem venda: cClassTrib definido pela operacao. */
 const REMESSAS = [
   '5901', '5902', '5903', '5905', '5906', '5907', '5908', '5909', '5912', '5913', '5914', '5915', '5916', '5917',
@@ -35,14 +42,18 @@ const REMESSAS = [
 ];
 
 export const MAPA_CCLASS_POR_CFOP: Record<string, string> = {
-  ...Object.fromEntries(REMESSAS.map((c) => [c, '410999'])),
-  '6109': '200022', // venda a Zona Franca de Manaus / ALC
-  '6110': '200022',
+  ...Object.fromEntries(REMESSAS.map((c) => [c, CCLASS_REMESSA])),
+  '6109': CCLASS_ZFM,
+  '6110': CCLASS_ZFM,
 };
 
 const MAPA_SEM_VALORES = Object.fromEntries(REMESSAS.map((c) => [c, 'ausente']));
 
-/** CFOPs de venda/devolucao com tratamento IBS/CBS conhecido (dependente do NCM). */
+/**
+ * CFOPs de venda/devolucao que a Nay Fiscal reconhece (nao sao apontados como "sem regra").
+ * O tratamento IBS/CBS de cada um depende do NCM; nenhuma regra por NCM esta cadastrada ainda
+ * (o avaliador aceita o modo `mapa_por_ncm`, mas a tabela NCM x cClassTrib exige fonte oficial).
+ */
 export const MATRIZ_VENDA = [
   '1410', '2202', '1202', '5101', '5102', '5401', '5403', '5405', '6101', '6102', '6107', '6108', '6401', '6403', '6404',
 ];
@@ -57,7 +68,7 @@ const RULES_BASE: RuleSeed[] = [
     state: 'interpretada',
     severity: 'erro',
     definition: { mapa: MAPA_CCLASS_POR_CFOP, exigir: 'presenca' },
-    description: 'CFOPs de remessa e retorno (ex.: 6912, 6924) devem usar cClassTrib 410999. Venda para ZFM/ALC (6109, 6110) usa 200022.',
+    description: `CFOPs de remessa e retorno (ex.: 6912, 6924) devem usar cClassTrib ${CCLASS_REMESSA}. Venda para ZFM/ALC (6109, 6110) usa ${CCLASS_ZFM}.`,
     what: 'o item {item} usa o CFOP {cfop}, uma operação sem venda, mas o cClassTrib está {observado}.',
     why: 'desde a fase de testes da Reforma o grupo IBS/CBS precisa indicar o tratamento correto da operação. Com a classe errada, o destinatário pode tomar crédito indevido.',
     how: 'no ERP, associe o CFOP {cfop} ao CST {cst} e cClassTrib {esperado}.',
@@ -78,7 +89,7 @@ const RULES_BASE: RuleSeed[] = [
     why: 'o valor destacado vira débito indevido e pode gerar crédito irregular no destinatário.',
     how: 'para o CFOP {cfop}, remova as alíquotas e valores do grupo gIBSCBS.',
     fixTag: '<vIBS>0.00</vIBS> <vCBS>0.00</vCBS>',
-    legalBasis: 'LC 214/2025; tratamento 410999 da NT 2025.002',
+    legalBasis: `LC 214/2025; tratamento ${CCLASS_REMESSA} da NT 2025.002`,
   },
   {
     code: 'cfop-sem-regra-ibs-cbs',
@@ -89,10 +100,10 @@ const RULES_BASE: RuleSeed[] = [
     state: 'interpretada',
     severity: 'a_verificar',
     definition: { conhecidos: [...MATRIZ_VENDA, ...Object.keys(MAPA_CCLASS_POR_CFOP)] },
-    description: 'Ainda não há tratamento de IBS/CBS cadastrado para este CFOP. Cadastre uma regra para auditar.',
+    description: 'Ainda não há tratamento de IBS/CBS cadastrado para este CFOP, então o item não é conferido.',
     what: 'o CFOP {cfop} não tem regra de IBS/CBS cadastrada na Nay Fiscal.',
     why: 'sem regra, esse ponto da nota não é conferido.',
-    how: 'cadastre o tratamento em Gestão › Regras.',
+    how: 'confira o item manualmente e peça à equipe da Nay Fiscal para incluir o CFOP {cfop} nas regras.',
     fixTag: null,
     legalBasis: 'Matriz interna CFOP × CST × cClassTrib',
   },
@@ -233,10 +244,10 @@ const RULES_BASE: RuleSeed[] = [
     mode: 'tecnica',
     state: 'interpretada',
     severity: 'erro',
-    definition: { desde: '2026-08-03' },
-    description: 'Notas emitidas a partir de 03/08/2026 precisam do grupo IBSCBS em cada item.',
+    definition: { desde: REFORMA.grupoObrigatorioDesde },
+    description: `Notas emitidas a partir de ${GRUPO_DESDE} precisam do grupo IBSCBS em cada item.`,
     what: 'o item {item} não traz o grupo IBS/CBS.',
-    why: 'desde 03/08/2026 o grupo é obrigatório. Sem ele a nota não informa CST, classificação, alíquotas nem valores dos novos tributos.',
+    why: `desde ${GRUPO_DESDE} o grupo é obrigatório. Sem ele a nota não informa CST, classificação, alíquotas nem valores dos novos tributos.`,
     how: 'atualize o leiaute do ERP para a NT 2025.002 e emita com o grupo IBSCBS.',
     fixTag: '<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib>…</IBSCBS>',
     legalBasis: 'NT 2025.002 (grupo UB)',
@@ -283,12 +294,12 @@ const RULES_BASE: RuleSeed[] = [
     state: 'publicada',
     severity: 'erro',
     definition: { min: 2, max: 5 },
-    description: 'A alíquota do ISS vai de 2% a 5%. Abaixo de 2% só nas exceções previstas em lei.',
+    description: 'A alíquota do ISS vai de 2% a 5% (LC 116). Acima de 5% é sempre erro. Abaixo de 2% fica "a verificar", porque há exceções (itens 7.02, 7.05 e 16.01, Simples Nacional); com a faixa do município cadastrada, vira erro.',
     what: 'a NFS-e aplicou ISS de {observado}.',
     why: 'alíquota abaixo do mínimo ou acima do máximo é irregular e pode gerar cobrança da diferença ou crédito indevido para o tomador.',
-    how: 'confira a alíquota do município para este código de serviço e emita de novo com o valor certo.',
+    how: 'confira a alíquota do município para este código de serviço e emita de novo com o valor certo. Se a alíquota for legítima (exceção ou lei municipal), o município precisa constar na tabela de ISS.',
     fixTag: '<pAliq>2.00</pAliq>',
-    legalBasis: 'LC 116/2003, art. 8º, II (máximo 5%) e art. 8º-A (mínimo 2%)',
+    legalBasis: 'LC 116/2003, art. 8º, II (máximo 5%); LC 157/2016, art. 8º-A (mínimo 2%)',
   },
   {
     code: 'nfse-calculo-iss',

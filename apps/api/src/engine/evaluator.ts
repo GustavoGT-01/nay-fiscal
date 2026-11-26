@@ -1,3 +1,4 @@
+import { inicioDoDia } from '@nay/shared';
 import { accessKeyDv, type ParsedDocument, type ParsedItem } from '../xml/nfe-parser.js';
 import type { RuleSeed } from './catalog.js';
 import { actionFor } from './actions.js';
@@ -132,7 +133,7 @@ export function auditDocument(
 
   const reqRule = byCode.get('ibscbs-obrigatorio');
   const isNfe = doc.model === '55' || doc.model === '65';
-  if (reqRule && isNfe && doc.issuedAt >= new Date(String((reqRule.definition as any).desde) + 'T00:00:00-03:00')) {
+  if (reqRule && isNfe && doc.issuedAt >= inicioDoDia(String((reqRule.definition as any).desde))) {
     const missing = doc.items.filter((i) => !i.hasIbsCbs);
     if (missing.length) missing.forEach((i) => push('ibscbs-obrigatorio', 'erro', 'ausente', 'grupo IBSCBS', i.n));
     else push('ibscbs-obrigatorio', 'ok', 'presente', 'grupo IBSCBS');

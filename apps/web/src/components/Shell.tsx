@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { SCREENS } from '@nay/shared';
+import { dataBR, REFORMA, SCREENS } from '@nay/shared';
 import { initials } from '../lib/api';
 import { useSession } from '../lib/session';
 import { useToast } from '../lib/ui';
@@ -60,7 +60,7 @@ export function Shell() {
         {screens.filter((s) => s.group === 'support').map((s) => (
           <NavLink key={s.key} to={s.path} className="nav-btn"><i className={'ti ti-' + s.icon} />{s.label}</NavLink>
         ))}
-        <div className="side-foot"><b>Fase de teste da Reforma</b>Grupo IBS/CBS obrigatório nas NF-e emitidas desde 03/08/2026.</div>
+        <div className="side-foot"><b>Fase de teste da Reforma</b>Grupo IBS/CBS obrigatório nas NF-e emitidas desde {dataBR(REFORMA.grupoObrigatorioDesde)}.</div>
       </nav>
 
       <main className="main">

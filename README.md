@@ -38,7 +38,7 @@ O seed gera cerca de 580 NF-e sintéticas para 5 clientes e passa cada uma pelo 
 
 ## NFS-e (notas de serviço)
 
-A Nay lê a NFS-e do padrão nacional (Emissor Nacional / Sefin) e o evento de cancelamento. Ela confere o código do serviço (LC 116), a alíquota do ISS (2% a 5%), o cálculo do ISS, o ISS em serviço sem tributação, o ISS de MEI, a retenção por pessoa física, o valor líquido e o grupo IBS/CBS. A tela NFS-e mostra as notas prestadas e tomadas, com os totais de ISS e de retenções.
+A Nay lê a NFS-e do padrão nacional (Emissor Nacional / Sefin) e o evento de cancelamento. Ela confere o código do serviço (LC 116), a alíquota do ISS (acima de 5% é erro; abaixo de 2% fica "a verificar", e a faixa de cada município pode ser cadastrada em `apps/api/src/engine/iss-municipal.ts`), o cálculo do ISS, o ISS em serviço sem tributação, o ISS de MEI, a retenção por pessoa física, o valor líquido e o grupo IBS/CBS. A tela NFS-e mostra as notas prestadas e tomadas, com os totais de ISS e de retenções.
 
 Para testar, há 5 NFS-e de exemplo (tomador Empresa Exemplo) em `fixtures/xml/nfse/`: importe pela tela Importar. Para gerar de novo:
 

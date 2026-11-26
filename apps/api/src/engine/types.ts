@@ -1,3 +1,5 @@
+import { inicioDoDia, REFORMA } from '@nay/shared';
+
 export type FindingSeverity = 'erro' | 'atencao' | 'a_verificar' | 'ok';
 
 export interface EngineFinding {
@@ -19,5 +21,5 @@ export interface ClientContext {
 
 export type Push = (code: string, severity: FindingSeverity, observed: string, expected: string, itemN?: number | null) => void;
 
-/** Inicio da Reforma: a partir daqui as regras de IBS/CBS valem. */
-export const INICIO_REFORMA = new Date('2026-01-01T00:00:00-03:00');
+/** Inicio da Reforma: a partir daqui as regras de IBS/CBS valem (data em `REFORMA`, no pacote shared). */
+export const INICIO_REFORMA = inicioDoDia(REFORMA.inicio);

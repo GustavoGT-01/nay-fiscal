@@ -239,11 +239,24 @@ export interface DashboardDTO {
   };
 }
 
+/**
+ * Datas e aliquotas da Reforma Tributaria: unica fonte para a API (regras) e para o front (textos).
+ * Datas em AAAA-MM-DD, no fuso de Brasilia.
+ */
 export const REFORMA = {
   cbsTeste: 0.009,
   ibsTeste: 0.001,
+  /** A partir daqui as regras tributarias de IBS/CBS (por item) passam a valer. */
+  inicio: '2026-01-01',
+  /** A partir daqui o grupo IBSCBS e obrigatorio em cada item da NF-e. */
   grupoObrigatorioDesde: '2026-08-03',
 };
+
+/** Meia-noite (Brasilia) de uma data AAAA-MM-DD. */
+export const inicioDoDia = (iso: string) => new Date(iso + 'T00:00:00-03:00');
+
+/** AAAA-MM-DD para DD/MM/AAAA, para textos. */
+export const dataBR = (iso: string) => iso.split('-').reverse().join('/');
 
 /** Resultado de uma limpeza de dados (quantidades apagadas). */
 export interface WipeResultDTO {

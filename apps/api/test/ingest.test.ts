@@ -12,7 +12,7 @@ vi.mock('../src/models/rule.js', async (original) => {
 });
 vi.mock('../src/models/client.js', async (original) => {
   const m = await original<typeof import('../src/models/client.js')>();
-  return { ...m, findById: vi.fn(m.findById) };
+  return { ...m, findById: vi.fn(m.findById), findWithEstablishments: vi.fn(m.findWithEstablishments) };
 });
 
 vi.mock('../src/xml/nfe-parser.js', async (original) => {
@@ -95,13 +95,14 @@ describe('motivo das falhas no envio', () => {
 describe('consultas por lote, nao por nota', () => {
   it('le as regras e o cliente uma vez, e nao a cada nota', async () => {
     const { activeRules } = await import('../src/models/rule.js');
-    const { findById } = await import('../src/models/client.js');
+    const { findById, findWithEstablishments } = await import('../src/models/client.js');
     (activeRules as Mock).mockClear();
     (findById as Mock).mockClear();
+    (findWithEstablishments as Mock).mockClear();
     await upload(Array.from({ length: 8 }, (_, i) => ({ name: `n${i}.xml`, xml: nota() })));
     // antes: regras lidas 1x por nota, e o cliente 2x por nota (importacao + auditoria)
     expect((activeRules as Mock).mock.calls.length).toBeLessThanOrEqual(1);
-    expect((findById as Mock).mock.calls.length).toBeLessThanOrEqual(1);
+    expect((findById as Mock).mock.calls.length + (findWithEstablishments as Mock).mock.calls.length).toBeLessThanOrEqual(1);
     expect(await prisma.document.count({ where: { clientId } })).toBeGreaterThanOrEqual(8);
   });
 });

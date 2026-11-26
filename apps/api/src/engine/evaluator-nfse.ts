@@ -1,4 +1,5 @@
 import type { ParsedDocument } from '../xml/nfe-parser.js';
+import { faixaIss, julgarAliquota } from './iss-municipal.js';
 import { INICIO_REFORMA, type FindingSeverity, type Push } from './types.js';
 
 const brl = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -20,8 +21,9 @@ export function auditNfse(doc: ParsedDocument, push: Push, opts: { cancelled?: b
   const tributavel = s.issTributacao === '1' || s.issTributacao === '';
   const mei = s.simplesOption === '2';
   if (tributavel && !mei && s.issValue > 0) {
-    const okRate = s.issRate >= 2 && s.issRate <= 5;
-    p('nfse-aliquota-iss', okRate ? 'ok' : 'erro', pct(s.issRate), 'entre 2% e 5%', 1);
+    const faixa = faixaIss(s.incidenceCityCode || doc.emitter.cityCode, s.serviceCode, s.simplesOption);
+    const origem = faixa.origem === 'municipio' ? 'faixa do município' : 'LC 116';
+    p('nfse-aliquota-iss', julgarAliquota(s.issRate, faixa), pct(s.issRate), `entre ${pct(faixa.min)} e ${pct(faixa.max)} (${origem})`, 1);
     const esperado = Math.round(s.issBase * s.issRate) / 100;
     const okCalc = Math.abs(esperado - s.issValue) <= 0.02;
     p('nfse-calculo-iss', okCalc ? 'ok' : 'erro', 'R$ ' + brl(s.issValue), 'R$ ' + brl(esperado), 1);

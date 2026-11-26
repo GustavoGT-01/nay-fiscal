@@ -51,7 +51,7 @@ export async function processUpload(uploadId: string, files: { name: string; xml
   let processed = 0, ok = 0, err = 0, failed = 0, skipped = 0;
   const notMine: string[] = [];
   const usedClients = new Map<string, number>();
-  const clientCache = new Map<string, Awaited<ReturnType<typeof clients.findById>>>();
+  const clientCache = new Map<string, Awaited<ReturnType<typeof clients.findWithEstablishments>>>();
   for (const f of files) {
     const { p, e } = tryParse(f.xml);
     try {
@@ -81,7 +81,7 @@ export async function processUpload(uploadId: string, files: { name: string; xml
         }
       }
       let client = clientCache.get(clientId);
-      if (!client) { client = await clients.findById(clientId); clientCache.set(clientId, client); }
+      if (!client) { client = await clients.findWithEstablishments(clientId); clientCache.set(clientId, client); }
       const r = await ingestXml(clientId, f.xml, uploadId, { rules, client, parsed: p });
       usedClients.set(clientId, (usedClients.get(clientId) ?? 0) + 1);
       if (r.status === 'erro') err++;

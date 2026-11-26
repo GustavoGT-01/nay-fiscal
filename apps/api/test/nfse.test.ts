@@ -4,6 +4,7 @@ import { cnpjFrom } from '../prisma/demo/nfe-builder.js';
 import { parseFiscalXml, type ParsedDocument } from '../src/xml/nfe-parser.js';
 import { auditDocument, verdictFor } from '../src/engine/evaluator.js';
 import { RULES } from '../src/engine/catalog.js';
+import { faixaIss, julgarAliquota } from '../src/engine/iss-municipal.js';
 
 const PREST = cnpjFrom('778899110001');
 const TOMA = cnpjFrom('112223330001');
@@ -70,5 +71,33 @@ describe('NFS-e nacional', () => {
     const codes = run(nfse()).findings.map((f) => f.ruleCode);
     expect(codes).not.toContain('chave-dv');
     expect(codes.some((c) => c.startsWith('cfop'))).toBe(false);
+  });
+});
+
+describe('faixa do ISS', () => {
+  it('abaixo de 2% sem tabela do município é "a verificar", não erro', () => {
+    const r = run(nfse({ rate: 1 }));
+    expect(sev(r, 'nfse-aliquota-iss')).toEqual(['a_verificar']);
+    expect(r.status).not.toBe('erro');
+  });
+
+  it('acima de 5% é sempre erro, com ou sem tabela', () => {
+    expect(julgarAliquota(5.01, faixaIss('4115200', '170101', '1'))).toBe('erro');
+    expect(julgarAliquota(5.01, faixaIss('9999999', '170101', '1', { '9999999': { min: 2, max: 6, fonte: 't', vigencia: '2026-01-01' } }))).toBe('erro');
+  });
+
+  it('itens 7.02, 7.05 e 16.01 e ME/EPP podem ficar abaixo de 2%', () => {
+    for (const cod of ['070201', '070501', '160101']) expect(julgarAliquota(1, faixaIss('4115200', cod, '1'))).toBe('ok');
+    expect(julgarAliquota(1, faixaIss('4115200', '170101', '3'))).toBe('ok');
+    expect(julgarAliquota(1, faixaIss('4115200', '170101', '1'))).toBe('a_verificar');
+  });
+
+  it('com a faixa do município cadastrada, fora dela é erro (inclusive abaixo do piso) e dentro é ok', () => {
+    const tabela = { '4115200': { min: 3, max: 4, fonte: 'lei municipal de teste', vigencia: '2026-01-01' } };
+    const f = faixaIss('4115200', '070201', '3', tabela);
+    expect(f.origem).toBe('municipio');
+    expect(julgarAliquota(2, f)).toBe('erro');
+    expect(julgarAliquota(3.5, f)).toBe('ok');
+    expect(julgarAliquota(4.5, f)).toBe('erro');
   });
 });

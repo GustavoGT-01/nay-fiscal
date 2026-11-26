@@ -1,5 +1,6 @@
 import * as documents from '../models/document.js';
 import * as findings from '../models/finding.js';
+import { CCLASS_REMESSA } from '../engine/catalog.js';
 import { ruleMap } from '../models/rule.js';
 
 /** Diagnostico (sem IA): respostas montadas a partir da auditoria do cliente. */
@@ -16,9 +17,11 @@ export async function answerQuestion(client: { id: string; name: string }, quest
   const q = question.toLowerCase();
   let answer: string;
   if (/cclass|remessa|corrig/.test(q)) {
-    const r = rules.get('cfop-cclasstrib-remessa')!;
-    const c = byRule.find((x) => x.ruleCode === r.code)?._count ?? 0;
-    answer = `${c} itens têm cClassTrib errado em remessa. ${r.description} Como corrigir: ${r.how.replace('{cfop}', 'de remessa').replace('{cst}', '410').replace('{esperado}', '410999')} Base: ${r.legalBasis}.`;
+    const r = rules.get('cfop-cclasstrib-remessa');
+    const c = byRule.find((x) => x.ruleCode === 'cfop-cclasstrib-remessa')?._count ?? 0;
+    answer = r
+      ? `${c} itens têm cClassTrib errado em remessa. ${r.description} Como corrigir: ${r.how.replace('{cfop}', 'de remessa').replace('{cst}', '410').replace('{esperado}', CCLASS_REMESSA)} Base: ${r.legalBasis}.`
+      : 'A regra de cClassTrib em remessa está desativada neste escritório.';
   } else if (/h[ií]brido|simples|vale/.test(q)) {
     answer = 'Depende de quanto do seu faturamento vai para empresas do regime regular e de quanto você compra com crédito. Abra o Simulador do Simples: em 7 etapas ele compara o imposto mensal e o crédito que seus clientes ganham no Híbrido (LC 214/2025, art. 41).';
   } else if (/fornecedor/.test(q)) {

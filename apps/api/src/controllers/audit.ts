@@ -7,6 +7,7 @@ import * as documents from '../models/document.js';
 import * as findings from '../models/finding.js';
 import * as auditRuns from '../models/audit.js';
 import { ruleMap } from '../models/rule.js';
+import { CCLASS_REMESSA } from '../engine/catalog.js';
 import { runClientAudit } from '../services/audit.js';
 import { exportRows, toCsv, toXlsx } from '../services/audit-export.js';
 import { SEV_ORDER, directionWhere, periodWhere } from '../services/filters.js';
@@ -33,7 +34,7 @@ export async function ruleGroups(req: FastifyRequest): Promise<RuleGroupDTO[]> {
   const sampleIds = [...new Set([...groups.values()].flatMap((g) => [...g.docs].slice(0, 8)))];
   const numbers = new Map((await documents.numbersByIds(sampleIds)).map((d) => [d.id, d.number]));
   return [...groups.values()]
-    .map(({ docs, ...g }) => ({ ...g, notes: docs.size, sampleNotes: [...docs].slice(0, 8).map((id) => ({ id, number: numbers.get(id) ?? '' })), fixTag: g.fixTag?.includes('{esperado}') ? g.fixTag.replace('{esperado}', g.code === 'cfop-cclasstrib-remessa' ? '410999' : '…') : g.fixTag }))
+    .map(({ docs, ...g }) => ({ ...g, notes: docs.size, sampleNotes: [...docs].slice(0, 8).map((id) => ({ id, number: numbers.get(id) ?? '' })), fixTag: g.fixTag?.includes('{esperado}') ? g.fixTag.replace('{esperado}', g.code === 'cfop-cclasstrib-remessa' ? CCLASS_REMESSA : '…') : g.fixTag }))
     .sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity] || b.items - a.items);
 }
 
