@@ -32,6 +32,20 @@ Verificado e sem falha: isolamento entre escritórios (todo acesso por id é fil
 
 ## Riscos que ficaram (decisão do negócio)
 
+Atualização de 26/11/2026 (fase 6). O texto original de cada item fica abaixo; o estado atual é este:
+
+| Item | Estado |
+|---|---|
+| 1. Nota forjada | **Reduzido.** Nota com protocolo não é sobrescrita por conteúdo ou protocolo diferente; cancelada não volta a valer; substituições, recusas e cancelamentos são registrados com quem enviou. **Continua:** a assinatura não é conferida, então um XML forjado com chave nova entra, e um evento de cancelamento falso é aceito (fica registrado e avisado) |
+| 2. Refresh token copiado | **Resolvido.** Rotação com detecção de reuso (tolerância de 20 s para duas abas), "Sair" revoga a sessão e há o botão "Sair de todos os aparelhos". O token de acesso já emitido vale até 15 min |
+| 3. `CF-Connecting-IP` | Sem mudança: vale só no modo túnel e vindo do próprio computador |
+| 4. Clientes e avisos sem perfil | **Resolvido.** Sem a tela Clientes, a lista vem sem CNPJ, CNAE e filiais (o nome continua, para escolher o cliente); avisos filtrados por permissão |
+| 5. Listas na memória | Reduzido na fase 3; ver `doc/melhorias.md`, item 8 |
+| 6. `vitest` | **Resolvido** com a 4.1.12. Em 26/11/2026 o `npm audit` ainda apontava 3 avisos altos em `effect`, que vem do `prisma` (ferramenta de linha de comando) |
+
+Também na fase 6: bloqueio de login guardado no banco (só o hash da chave), senha provisória bloqueia a API até a troca, consultas sem filtro de escritório ganharam o sufixo `Unscoped` e `Upload.officeId` passou a ser obrigatório. O limite de taxa geral (por IP) segue em memória.
+
+
 1. **Assinatura do XML não é verificada.** Quem tem `importar` pode enviar uma NF-e forjada com a chave de uma nota existente e sobrescrevê-la, ou enviar um evento de cancelamento falso. O risco fica dentro do próprio escritório. Opções: validar a assinatura XMLDSig e o protocolo, ou recusar sobrescrever nota com protocolo e registrar quem substituiu ou cancelou.
 2. **"Sair" apaga o cookie, mas o refresh token antigo continua válido até expirar (7 dias)** se alguém o tiver copiado. Não há detecção de reuso. "Sair de todos" resolve; falta um botão na tela.
 3. **O limite por IP confia no `CF-Connecting-IP`**, e só no modo túnel. Não exponha a porta da API direto na internet.

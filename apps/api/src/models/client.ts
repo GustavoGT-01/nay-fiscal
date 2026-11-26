@@ -7,12 +7,13 @@ export const listWithEstablishments = (officeId: string) =>
 /** Cliente do escritorio (null se nao existir ou for de outro escritorio). */
 export const findOfOffice = (id: string, officeId: string) => prisma.client.findFirst({ where: { id, officeId } });
 
-export const findById = (id: string) => prisma.client.findUniqueOrThrow({ where: { id } });
+// `Unscoped`: nao filtra por escritorio. Em rota, use findOfOffice (ou ownClient).
+export const findByIdUnscoped = (id: string) => prisma.client.findUniqueOrThrow({ where: { id } });
 
 /** Cliente com os estabelecimentos cadastrados (a importacao usa as raizes de todos para dar a direcao da nota). */
-export const findWithEstablishments = (id: string) => prisma.client.findUniqueOrThrow({ where: { id }, include: { establishments: true } });
+export const findWithEstablishmentsUnscoped = (id: string) => prisma.client.findUniqueOrThrow({ where: { id }, include: { establishments: true } });
 
-export const findByIdOrNull = (id: string) => prisma.client.findUnique({ where: { id } });
+export const findByIdOrNullUnscoped = (id: string) => prisma.client.findUnique({ where: { id } });
 
 /** Cliente que ja usa esta raiz de CNPJ (como matriz ou em algum estabelecimento). */
 export const findByCnpjRoot = (officeId: string, root: string) =>

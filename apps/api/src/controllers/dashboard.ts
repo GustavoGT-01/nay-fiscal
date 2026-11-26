@@ -11,16 +11,18 @@ import { SEV_ORDER, counterpart, directionWhere } from '../services/filters.js';
 export async function listClients(req: FastifyRequest): Promise<ClientDTO[]> {
   const list = await clients.listWithEstablishments(req.me.officeId);
   const counts = await documents.countByClientAndStatus(list.map((c) => c.id));
+  // o seletor de cliente precisa da lista para todo mundo; documento, atividade e filiais so para quem tem Clientes
+  const full = req.me.permissions.includes('clientes') || req.me.permissions.includes('clientes.gerenciar');
   return list.map((c) => {
     const rows = counts.filter((x) => x.clientId === c.id);
     const total = rows.reduce((a, r) => a + r._count, 0);
     const valid = rows.filter((r) => r.status !== 'cancelada').reduce((a, r) => a + r._count, 0);
     const ok = rows.filter((r) => r.status === 'ok' || r.status === 'atencao').reduce((a, r) => a + r._count, 0);
     return {
-      id: c.id, name: c.name, tradeName: c.tradeName, cnpj: c.cnpj, regime: c.regime, city: c.city, uf: c.uf,
-      cityCode: c.cityCode, cnae: c.cnae,
+      id: c.id, name: c.name, tradeName: c.tradeName, cnpj: full ? c.cnpj : '', regime: c.regime, city: c.city, uf: c.uf,
+      cityCode: full ? c.cityCode : null, cnae: full ? c.cnae : null,
       totalNotes: total, conformity: valid ? Math.round((ok / valid) * 100) : null,
-      establishments: c.establishments.map((e) => ({ id: e.id, label: e.label, cnpj: e.cnpj })),
+      establishments: full ? c.establishments.map((e) => ({ id: e.id, label: e.label, cnpj: e.cnpj })) : [],
     };
   });
 }

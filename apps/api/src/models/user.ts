@@ -4,6 +4,8 @@ export const findByEmail = (email: string) => prisma.user.findUnique({ where: { 
 
 export const findById = (id: string) => prisma.user.findUniqueOrThrow({ where: { id } });
 
+export const findByIdOrNull = (id: string) => prisma.user.findUnique({ where: { id } });
+
 /** Usuario com escritorio e perfil (para montar permissoes). */
 export const findWithOfficeAndProfile = (id: string) =>
   prisma.user.findUniqueOrThrow({ where: { id }, include: { office: true, profile: true } });

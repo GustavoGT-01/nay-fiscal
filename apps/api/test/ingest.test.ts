@@ -12,7 +12,7 @@ vi.mock('../src/models/rule.js', async (original) => {
 });
 vi.mock('../src/models/client.js', async (original) => {
   const m = await original<typeof import('../src/models/client.js')>();
-  return { ...m, findById: vi.fn(m.findById), findWithEstablishments: vi.fn(m.findWithEstablishments) };
+  return { ...m, findByIdUnscoped: vi.fn(m.findByIdUnscoped), findWithEstablishmentsUnscoped: vi.fn(m.findWithEstablishmentsUnscoped) };
 });
 
 vi.mock('../src/xml/nfe-parser.js', async (original) => {
@@ -21,7 +21,7 @@ vi.mock('../src/xml/nfe-parser.js', async (original) => {
 });
 vi.mock('../src/models/document.js', async (original) => {
   const m = await original<typeof import('../src/models/document.js')>();
-  return { ...m, findWithItems: vi.fn(m.findWithItems) };
+  return { ...m, findWithItemsUnscoped: vi.fn(m.findWithItemsUnscoped) };
 });
 
 // Importacao em lote: o motivo de cada falha aparece no envio, e o lote nao repete consultas por nota.
@@ -95,14 +95,14 @@ describe('motivo das falhas no envio', () => {
 describe('consultas por lote, nao por nota', () => {
   it('le as regras e o cliente uma vez, e nao a cada nota', async () => {
     const { activeRules } = await import('../src/models/rule.js');
-    const { findById, findWithEstablishments } = await import('../src/models/client.js');
+    const { findByIdUnscoped, findWithEstablishmentsUnscoped } = await import('../src/models/client.js');
     (activeRules as Mock).mockClear();
-    (findById as Mock).mockClear();
-    (findWithEstablishments as Mock).mockClear();
+    (findByIdUnscoped as Mock).mockClear();
+    (findWithEstablishmentsUnscoped as Mock).mockClear();
     await upload(Array.from({ length: 8 }, (_, i) => ({ name: `n${i}.xml`, xml: nota() })));
     // antes: regras lidas 1x por nota, e o cliente 2x por nota (importacao + auditoria)
     expect((activeRules as Mock).mock.calls.length).toBeLessThanOrEqual(1);
-    expect((findById as Mock).mock.calls.length + (findWithEstablishments as Mock).mock.calls.length).toBeLessThanOrEqual(1);
+    expect((findByIdUnscoped as Mock).mock.calls.length + (findWithEstablishmentsUnscoped as Mock).mock.calls.length).toBeLessThanOrEqual(1);
     expect(await prisma.document.count({ where: { clientId } })).toBeGreaterThanOrEqual(8);
   });
 });
@@ -111,10 +111,10 @@ describe('cada XML é lido uma vez, e a auditoria não relê a nota do banco', (
   const lote = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `l${i}.xml`, xml: nota() }));
   const contadores = async () => {
     const { parseFiscalXml } = await import('../src/xml/nfe-parser.js');
-    const { findWithItems } = await import('../src/models/document.js');
+    const { findWithItemsUnscoped } = await import('../src/models/document.js');
     (parseFiscalXml as Mock).mockClear();
-    (findWithItems as Mock).mockClear();
-    return { leituras: () => (parseFiscalXml as Mock).mock.calls.length, releituras: () => (findWithItems as Mock).mock.calls.length };
+    (findWithItemsUnscoped as Mock).mockClear();
+    return { leituras: () => (parseFiscalXml as Mock).mock.calls.length, releituras: () => (findWithItemsUnscoped as Mock).mock.calls.length };
   };
 
   it('com cliente escolhido: 1 leitura por arquivo e nenhuma releitura da nota (antes: 3 leituras e 1 releitura por nota)', async () => {

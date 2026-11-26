@@ -45,6 +45,47 @@ model User {
   profileId    String?
   profile      Profile? @relation(fields: [profileId], references: [id])
   createdAt    DateTime @default(now())
+  refreshTokens RefreshToken[]
+}
+
+/// Um token de renovacao de sessao. Cada uso troca por outro da mesma familia (login);
+/// reaparecer um ja usado indica copia, e a familia inteira cai.
+model RefreshToken {
+  jti       String    @id
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyId  String
+  usedAt    DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  @@index([familyId])
+  @@index([userId])
+}
+
+/// Tentativas erradas de login (bloqueio por conta e IP). `key` e um hash: o texto digitado nunca e guardado.
+model LoginAttempt {
+  key         String    @id
+  fails       Int       @default(1)
+  first       DateTime
+  lockedUntil DateTime?
+}
+
+/// Historico do que mudou uma nota ja guardada. Sem relacao com a nota: sobrevive a ela ser apagada.
+model DocumentEvent {
+  id        String   @id @default(cuid())
+  officeId  String
+  clientId  String
+  key       String
+  number    String
+  type      String // substituida | recusada | cancelada
+  userId    String?
+  userName  String   @default("")
+  uploadId  String?
+  createdAt DateTime @default(now())
+
+  @@index([officeId, createdAt])
+  @@index([clientId, key])
 }
 
 model Client {
@@ -81,7 +122,9 @@ model Establishment {
 model Upload {
   id          String     @id @default(cuid())
   /// escritorio dono do envio (o cliente pode ser detectado depois, pelo XML)
-  officeId    String     @default("")
+  officeId    String
+  /// quem enviou (para registrar substituicao e cancelamento de notas)
+  userId      String?
   /// cliente escolhido no envio; null = detectar pelo CNPJ das notas
   clientId    String?
   client      Client?    @relation(fields: [clientId], references: [id], onDelete: Cascade)

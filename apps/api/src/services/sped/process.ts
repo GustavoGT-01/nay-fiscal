@@ -14,7 +14,7 @@ export async function processSped(uploadId: string, fileName: string, buf: Buffe
   const { header, entries } = parsed;
 
   // o cliente do envio, ou o cadastrado com o CNPJ do arquivo; nunca um cliente de outro CNPJ
-  let client = up.clientId ? await clients.findWithEstablishments(up.clientId) : null;
+  let client = up.clientId ? await clients.findWithEstablishmentsUnscoped(up.clientId) : null;
   if (!client) {
     const all = await clients.loadAllForResolver(up.officeId);
     client = all.find((c) => rootsOf(c).has(header.cnpj.slice(0, 8))) ?? null;

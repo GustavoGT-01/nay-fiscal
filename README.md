@@ -80,12 +80,14 @@ O servidor liga o modo WAL do SQLite ao subir, para as telas não esperarem a im
 
 ## Segurança
 
-- Sessão: o token de acesso (15 min) fica só na memória da aba; o de renovação (7 dias) fica num cookie `httpOnly`, `SameSite=Strict`, restrito a `/api/auth`. Trocar a senha (`npm run senha`) derruba todas as sessões abertas; `POST /api/auth/logout-all` faz o mesmo para o próprio usuário.
+- Sessão: o token de acesso (15 min) fica só na memória da aba; o de renovação (7 dias) fica num cookie `httpOnly`, `SameSite=Strict`, restrito a `/api/auth`. Cada renovação gasta o token e entrega outro: se um token já gasto reaparece (fora de uma tolerância de 20 segundos para duas abas), aquela sessão é encerrada. "Sair" revoga a sessão no servidor; "Sair de todos os aparelhos" (menu do usuário) e a troca de senha derrubam todas.
 - Segredo: a API ignora `JWT_SECRET` vazio, curto (menos de 32 caracteres) ou público e usa um segredo aleatório temporário. `iniciar.bat` e `tunnel.bat` geram um segredo forte com `scripts/garantir-segredo.ps1`.
-- Login: 5 senhas erradas seguidas bloqueiam a conta por 15 minutos, e cada IP tem 10 tentativas por minuto.
+- Login: 5 senhas erradas seguidas bloqueiam o par conta e IP por 15 minutos (guardado no banco, vale depois de reiniciar), e cada IP tem 10 tentativas por minuto. Senha definida pelo administrador só permite trocá-la: o resto da API responde 403 até a troca.
+- Nota autorizada: um XML com a mesma chave e conteúdo ou protocolo diferente não sobrescreve a nota guardada, e nota cancelada não volta a valer por reimportação. Substituições, recusas e cancelamentos ficam em `DocumentEvent`, com quem enviou, e geram um aviso. Para trocar de propósito, apague a nota e importe de novo. A assinatura do XML **não** é conferida.
+- Perfis: quem não tem a tela Clientes recebe a lista só para escolher o cliente (sem CNPJ, CNAE nem filiais) e não recebe avisos sobre o que não alcança.
 - Importação: até 20 arquivos e 50 MB por envio (50 MB por arquivo); XML até 5 MB, sem `DOCTYPE`/`ENTITY`; ZIP com no máximo 3.000 XMLs, 150 MB descompactados e taxa de compressão até 200:1 (bloqueia zip bomb).
 - Saídas: o CSV neutraliza fórmulas vindas do XML (`=`, `+`, `-`, `@`), e o HTML da nota bloqueia scripts por CSP.
-- Testes de ataque em `apps/api/test/security.test.ts` (`npm test`).
+- Testes de ataque em `apps/api/test/security.test.ts` e `hardening.test.ts` (`npm test`).
 
 ## Estrutura
 
@@ -131,4 +133,4 @@ O mesmo conjunto (tipos, lint, testes e build do front) roda no GitHub Actions e
 
 ## Próximas etapas
 
-Gestão › Regras (ativar e desativar regras) e convite por e-mail, Diagnóstico com IA (Claude, depende da decisão sobre enviar dados fiscais à API), validação de assinatura e protocolo do XML, e a leitura de C170/C190 no SPED.
+Gestão › Regras (ativar e desativar regras) e convite por e-mail, Diagnóstico com IA (Claude, depende da decisão sobre enviar dados fiscais à API), validação da assinatura do XML, tela do histórico de substituições e cancelamentos, e a leitura de C170/C190 no SPED.

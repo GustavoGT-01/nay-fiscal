@@ -7,7 +7,7 @@ export type UploadWithClient = Prisma.UploadGetPayload<{ include: typeof withCli
 // envios do escritorio inteiro (um envio pode criar ou abastecer varios clientes)
 const ofOffice = (officeId: string) => ({ OR: [{ officeId }, { client: { officeId } }] });
 
-export const create = (data: { officeId: string; clientId: string | null; fileName: string; kind: string }) =>
+export const create = (data: { officeId: string; userId: string; clientId: string | null; fileName: string; kind: string }) =>
   prisma.upload.create({ data });
 
 export const update = (id: string, data: Prisma.UploadUpdateInput | Prisma.UploadUncheckedUpdateInput) =>

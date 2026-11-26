@@ -92,9 +92,11 @@ export const findForDelete = (id: string, officeId: string) =>
 
 export const remove = (id: string) => prisma.document.delete({ where: { id } });
 
-export const findWithItems = (id: string) => prisma.document.findUniqueOrThrow({ where: { id }, include: { items: true } }).then(fromDb);
+/** `Unscoped`: nao filtra por escritorio; so para ids que o proprio servidor ja conferiu. */
+export const findWithItemsUnscoped = (id: string) => prisma.document.findUniqueOrThrow({ where: { id }, include: { items: true } }).then(fromDb);
 
-export const findByKey = (clientId: string, key: string) =>
+/** `Unscoped`: filtra pelo cliente, nao pelo escritorio; o chamador ja conferiu o cliente. */
+export const findByKeyUnscoped = (clientId: string, key: string) =>
   prisma.document.findUnique({ where: { clientId_key: { clientId, key } } }).then(fromDb);
 
 /** Cliente dono da nota com esta chave, dentro do escritorio. */

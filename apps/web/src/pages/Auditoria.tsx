@@ -55,7 +55,7 @@ export function Auditoria() {
 
   const exportAs = async (format: 'xlsx' | 'csv') => {
     try {
-      const { truncatedAt } = await download(`/api/audit/export?${qs}&format=${format}`, `auditoria-${client!.cnpj}.${format}`);
+      const { truncatedAt } = await download(`/api/audit/export?${qs}&format=${format}`, `auditoria-${client!.cnpj || 'cliente'}.${format}`);
       if (truncatedAt) toast(`Relatório incompleto: só as ${truncatedAt.toLocaleString('pt-BR')} linhas mais recentes. Filtre por período para ver o restante.`, 'ti-alert-triangle');
       else toast(format === 'xlsx' ? 'Planilha da auditoria exportada' : 'CSV da auditoria exportado', 'ti-download');
     } catch (e) {

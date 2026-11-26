@@ -58,7 +58,7 @@ export async function createUploads(req: FastifyRequest, reply: FastifyReply) {
   const created = [];
   for (const f of files) {
     const kind = /\.zip$/i.test(f.name) ? 'ZIP' : /\.txt$/i.test(f.name) ? 'SPED' : 'XML';
-    const up = await uploads.create({ officeId: req.me.officeId, clientId: client?.id ?? null, fileName: f.name, kind });
+    const up = await uploads.create({ officeId: req.me.officeId, userId: req.me.id, clientId: client?.id ?? null, fileName: f.name, kind });
     created.push(up);
     void enqueue(async () => {
       try {
